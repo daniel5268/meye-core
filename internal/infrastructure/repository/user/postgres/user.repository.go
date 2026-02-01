@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"meye-core/internal/domain/user"
 	"time"
 
@@ -36,4 +37,19 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) FindByUsername(ctx context.Context, username string) (*user.User, error) {
+	var userModel User
+	result := r.db.Where("username = ?", username).First(&userModel)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, result.Error
+	}
+
+	domainUser := userModel.ToDomainUser()
+	return domainUser, nil
 }

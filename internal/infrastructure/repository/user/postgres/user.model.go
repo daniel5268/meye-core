@@ -22,3 +22,12 @@ func GetModelFromDomainUser(u *user.User) *User {
 		Role:           u.Role(),
 	}
 }
+
+func (u *User) ToDomainUser() *user.User {
+	return user.CreateUserWithoutValidation(
+		u.Id,
+		u.Username,
+		u.HashedPassword,
+		u.Role,
+	)
+}
