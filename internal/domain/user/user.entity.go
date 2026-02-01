@@ -1,0 +1,39 @@
+package user
+
+import "meye-core/internal/domain/shared"
+
+type UserRole string
+
+const (
+	UserRoleAdmin  UserRole = "admin"
+	UserRoleMaster UserRole = "master"
+	UserRolePlayer UserRole = "player"
+)
+
+type User struct {
+	id             string
+	username       string
+	hashedPassword string
+	role           UserRole
+}
+
+func NewUser(username, password string, role UserRole, identificationService shared.IdentificationService, hashService HashService) (*User, error) {
+	id := identificationService.GenerateID()
+
+	hashedPassword, err := hashService.Hash(password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &User{
+		id:             id,
+		username:       username,
+		role:           role,
+		hashedPassword: hashedPassword,
+	}, nil
+}
+
+func (u *User) ID() string             { return u.id }
+func (u *User) Username() string       { return u.username }
+func (u *User) Role() UserRole         { return u.role }
+func (u *User) HashedPassword() string { return u.hashedPassword }
