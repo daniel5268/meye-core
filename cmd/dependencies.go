@@ -1,0 +1,164 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"meye-core/internal/application/user/createuser"
+	"meye-core/internal/config"
+	"meye-core/internal/infrastructure/api"
+	"meye-core/internal/infrastructure/api/handler"
+	"meye-core/internal/infrastructure/hash"
+	"meye-core/internal/infrastructure/identification"
+	postgresUserRepo "meye-core/internal/infrastructure/repository/user/postgres"
+
+	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+type UserUseCases struct {
+	CreateUser *createuser.UseCase
+}
+
+type UseCases struct {
+	User *UserUseCases
+}
+
+type Repositories struct {
+	User *postgresUserRepo.Repository
+}
+
+type Services struct {
+	Hash           *hash.Service
+	Identification *identification.Service
+}
+
+type Handlers struct {
+	User *handler.UserHandler
+	Auth *handler.AuthHandler
+}
+
+type DependencyContainer struct {
+	Config       *config.Config
+	Database     *gorm.DB
+	Services     *Services
+	Repositories *Repositories
+	UseCases     *UseCases
+	Handlers     *Handlers
+	APIRouter    *api.Router
+}
+
+func (c *DependencyContainer) loadEnvironment() error {
+	if os.Getenv("GO_ENV") == "development" {
+		if err := godotenv.Load(); err != nil {
+			logrus.Warn("No .env file found, using system environment variables")
+		}
+	}
+
+	return nil
+}
+
+func (c *DependencyContainer) loadConfig() error {
+	cfg, err := config.New()
+	if err != nil {
+		return fmt.Errorf("failed to create config: %w", err)
+	}
+
+	c.Config = cfg
+
+	return nil
+}
+
+func (c *DependencyContainer) connectDatabase() error {
+	db, err := gorm.Open(postgres.Open(c.Config.Database.DSN), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	c.Database = db
+
+	logrus.Info("Database connection established")
+
+	return nil
+}
+
+func NewDependencyContainer() (*DependencyContainer, error) {
+	container := &DependencyContainer{}
+
+	if err := container.loadEnvironment(); err != nil {
+		return nil, fmt.Errorf("failed to load environment: %w", err)
+	}
+
+	if err := container.loadConfig(); err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if err := container.connectDatabase(); err != nil {
+		return nil, fmt.Errorf("failed to connect database: %w", err)
+	}
+
+	container.initializeServices()
+	container.initializeRepositories()
+	container.initializeUseCases()
+	container.initializeHandlers()
+	container.initializeRouter()
+
+	return container, nil
+}
+
+func (c *DependencyContainer) initializeServices() {
+	c.Services = &Services{
+		Hash:           hash.NewHashService(),
+		Identification: identification.NewService(),
+	}
+}
+
+func (c *DependencyContainer) initializeRepositories() {
+	c.Repositories = &Repositories{
+		User: postgresUserRepo.New(c.Database),
+	}
+}
+
+func (c *DependencyContainer) initializeUseCases() {
+	c.UseCases = &UseCases{
+		User: &UserUseCases{
+			CreateUser: createuser.NewUseCase(
+				c.Repositories.User,
+				c.Services.Identification,
+				c.Services.Hash,
+			),
+		},
+	}
+}
+
+func (c *DependencyContainer) initializeHandlers() {
+	c.Handlers = &Handlers{
+		User: handler.NewUserHandler(c.UseCases.User.CreateUser),
+		Auth: handler.NewAuthHandler(c.Config.Api.ApiKey),
+	}
+}
+
+func (c *DependencyContainer) initializeRouter() {
+	c.APIRouter = api.NewRouter(&api.Handlers{
+		UserHandler: c.Handlers.User,
+		AuthHandler: c.Handlers.Auth,
+	})
+	logrus.Debug("Router initialized")
+}
+
+// Close gracefully closes all resources
+func (c *DependencyContainer) Close() error {
+	if c.Database != nil {
+		if sqlDB, err := c.Database.DB(); err == nil {
+			if err := sqlDB.Close(); err != nil {
+				logrus.Errorf("Failed to close database connection: %v", err)
+				return err
+			}
+			logrus.Info("Database connection closed")
+		}
+	}
+
+	return nil
+}
