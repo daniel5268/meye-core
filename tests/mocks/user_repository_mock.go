@@ -41,6 +41,21 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
+// FindByUsername mocks base method.
+func (m *MockRepository) FindByUsername(ctx context.Context, username string) (*user.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByUsername", ctx, username)
+	ret0, _ := ret[0].(*user.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByUsername indicates an expected call of FindByUsername.
+func (mr *MockRepositoryMockRecorder) FindByUsername(ctx, username any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUsername", reflect.TypeOf((*MockRepository)(nil).FindByUsername), ctx, username)
+}
+
 // Save mocks base method.
 func (m *MockRepository) Save(ctx context.Context, arg1 *user.User) error {
 	m.ctrl.T.Helper()

@@ -28,6 +28,15 @@ func (c *UseCase) Execute(ctx context.Context, input Input) (applicationuser.Use
 		return applicationuser.UserOutput{}, err
 	}
 
+	existingUser, err := c.userRepository.FindByUsername(ctx, input.Username)
+	if err != nil {
+		return applicationuser.UserOutput{}, err
+	}
+
+	if existingUser != nil {
+		return applicationuser.UserOutput{}, applicationuser.ErrUsernameAlreadyExists
+	}
+
 	if err := c.userRepository.Save(ctx, newUser); err != nil {
 		return applicationuser.UserOutput{}, err
 	}

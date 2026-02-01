@@ -37,3 +37,12 @@ func (u *User) ID() string             { return u.id }
 func (u *User) Username() string       { return u.username }
 func (u *User) Role() UserRole         { return u.role }
 func (u *User) HashedPassword() string { return u.hashedPassword }
+
+func CreateUserWithoutValidation(id, username, password string, role UserRole) *User {
+	return &User{
+		id:             id,
+		username:       username,
+		role:           role,
+		hashedPassword: password,
+	}
+}
