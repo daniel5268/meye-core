@@ -59,6 +59,7 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 	users := group.Group("/users")
 	{
 		users.POST("", r.handlers.AuthHandler.InternalAPIKeyMiddleware(), r.handlers.UserHandler.CreateUser)
+		users.POST("/login", r.handlers.UserHandler.Login)
 	}
 }
 
