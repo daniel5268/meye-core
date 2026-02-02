@@ -8,7 +8,7 @@ const cost = 12
 
 type Service struct{}
 
-func NewHashService() *Service {
+func NewService() *Service {
 	return &Service{}
 }
 

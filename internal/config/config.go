@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 type Api struct {
@@ -14,9 +15,16 @@ type Database struct {
 	DSN string
 }
 
+type JWT struct {
+	Secret         string
+	Issuer         string
+	ExpirationTime time.Duration
+}
+
 type Config struct {
 	Api      Api
 	Database Database
+	JWT      JWT
 }
 
 func getInvalidVarErr(varName string) error {
@@ -46,6 +54,26 @@ func (cfg *Config) loadDB() error {
 	return nil
 }
 
+func (cfg *Config) loadJWT() error {
+	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+	if cfg.JWT.Secret == "" {
+		return getInvalidVarErr("JWT_SECRET")
+	}
+
+	cfg.JWT.Issuer = os.Getenv("JWT_ISSUER")
+	if cfg.JWT.Issuer == "" {
+		return getInvalidVarErr("JWT_ISSUER")
+	}
+
+	jwtExpTimeStr := os.Getenv("JWT_EXPIRATION_TIME")
+	jwtExpTime, err := time.ParseDuration(jwtExpTimeStr)
+	if err != nil {
+		return getInvalidVarErr("JWT_EXPIRATION_TIME")
+	}
+	cfg.JWT.ExpirationTime = jwtExpTime
+	return nil
+}
+
 // New loads configuration from environment and returns the structure.
 func New() (*Config, error) {
 	cfg := &Config{}
@@ -55,6 +83,10 @@ func New() (*Config, error) {
 	}
 
 	if err := cfg.loadDB(); err != nil {
+		return nil, err
+	}
+
+	if err := cfg.loadJWT(); err != nil {
 		return nil, err
 	}
 

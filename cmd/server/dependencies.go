@@ -5,11 +5,13 @@ import (
 	"os"
 
 	"meye-core/internal/application/user/createuser"
+	"meye-core/internal/application/user/login"
 	"meye-core/internal/config"
 	"meye-core/internal/infrastructure/api"
 	"meye-core/internal/infrastructure/api/handler"
 	"meye-core/internal/infrastructure/hash"
 	"meye-core/internal/infrastructure/identification"
+	"meye-core/internal/infrastructure/jwt"
 	postgresUserRepo "meye-core/internal/infrastructure/repository/user/postgres"
 
 	"github.com/joho/godotenv"
@@ -20,6 +22,7 @@ import (
 
 type UserUseCases struct {
 	CreateUser *createuser.UseCase
+	Login      *login.UseCase
 }
 
 type UseCases struct {
@@ -33,6 +36,7 @@ type Repositories struct {
 type Services struct {
 	Hash           *hash.Service
 	Identification *identification.Service
+	JWT            *jwt.Service
 }
 
 type Handlers struct {
@@ -110,8 +114,9 @@ func NewDependencyContainer() (*DependencyContainer, error) {
 
 func (c *DependencyContainer) initializeServices() {
 	c.Services = &Services{
-		Hash:           hash.NewHashService(),
+		Hash:           hash.NewService(),
 		Identification: identification.NewService(),
+		JWT:            jwt.NewService(c.Config.JWT.Secret, c.Config.JWT.Issuer, c.Config.JWT.ExpirationTime),
 	}
 }
 
@@ -129,13 +134,18 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Services.Identification,
 				c.Services.Hash,
 			),
+			Login: login.NewUseCase(
+				c.Repositories.User,
+				c.Services.Hash,
+				c.Services.JWT,
+			),
 		},
 	}
 }
 
 func (c *DependencyContainer) initializeHandlers() {
 	c.Handlers = &Handlers{
-		User: handler.NewUserHandler(c.UseCases.User.CreateUser),
+		User: handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
 		Auth: handler.NewAuthHandler(c.Config.Api.ApiKey),
 	}
 }

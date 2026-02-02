@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type ErrorResponse struct {
@@ -21,11 +20,15 @@ func respondMappedError(c *gin.Context, err error) {
 			Error: "Username already exists",
 			Code:  applicationuser.ErrUsernameAlreadyExists.Error(),
 		})
-		return
+	case errors.Is(err, applicationuser.ErrInvalidCredentials):
+		c.JSON(http.StatusUnauthorized, ErrorResponse{
+			Error: "Invalid credentials",
+			Code:  applicationuser.ErrInvalidCredentials.Error(),
+		})
+	default:
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: "Internal Server Error",
+			Code:  "INTERNAL_SERVER_ERROR",
+		})
 	}
-	logrus.WithContext(c.Request.Context()).Error(err.Error())
-	c.JSON(http.StatusInternalServerError, ErrorResponse{
-		Error: "Internal Server Error",
-		Code:  "INTERNAL_SERVER_ERROR",
-	})
 }

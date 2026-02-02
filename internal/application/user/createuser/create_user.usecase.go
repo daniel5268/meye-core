@@ -9,15 +9,15 @@ import (
 )
 
 type UseCase struct {
-	identificationService shared.IdentificationService
 	userRepository        domainuser.Repository
+	identificationService shared.IdentificationService
 	hashService           domainuser.HashService
 }
 
 func NewUseCase(usRepo domainuser.Repository, idServ shared.IdentificationService, hashServ domainuser.HashService) *UseCase {
 	return &UseCase{
-		identificationService: idServ,
 		userRepository:        usRepo,
+		identificationService: idServ,
 		hashService:           hashServ,
 	}
 }
