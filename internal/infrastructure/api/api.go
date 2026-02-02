@@ -17,8 +17,9 @@ type Router struct {
 
 // RouterConfig holds dependencies needed for routing
 type Handlers struct {
-	UserHandler *handler.UserHandler
-	AuthHandler *handler.AuthHandler
+	UserHandler     *handler.UserHandler
+	AuthHandler     *handler.AuthHandler
+	CampaignHandler *handler.CampaignHandler
 }
 
 func init() {
@@ -53,6 +54,7 @@ func (r *Router) setupRoutes() {
 
 	v1 := r.engine.Group("/api/v1")
 	r.setupUserRoutes(v1)
+	r.setupCampaignRoutes(v1)
 }
 
 func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
@@ -64,6 +66,17 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 			r.handlers.UserHandler.CreateUser,
 		)
 		users.POST("/login", r.handlers.UserHandler.Login)
+	}
+}
+
+func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
+	campaigns := group.Group("/campaigns")
+	{
+		campaigns.POST("",
+			r.handlers.AuthHandler.AuthMiddleware(),
+			r.handlers.AuthHandler.RequireMasterRole(),
+			r.handlers.CampaignHandler.CreateCampaign,
+		)
 	}
 }
 

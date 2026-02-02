@@ -21,7 +21,7 @@ func NewUserHandler(createUserUC user.CreateUserUseCase, loginUseCase user.Login
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	var reqBody dto.CreateUserInput
+	var reqBody dto.CreateUserInputBody
 
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -44,7 +44,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
-	var reqBody dto.LoginInput
+	var reqBody dto.LoginInputBody
 
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

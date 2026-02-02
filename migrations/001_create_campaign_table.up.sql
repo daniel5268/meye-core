@@ -1,0 +1,12 @@
+CREATE TABLE campaigns (
+    id VARCHAR(255) PRIMARY KEY,
+    master_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_user
+      FOREIGN KEY(master_id) 
+      REFERENCES users(id)
+      ON DELETE CASCADE
+);

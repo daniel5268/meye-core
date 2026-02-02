@@ -23,8 +23,8 @@ func NewUseCase(userRepo domainuser.Repository, hashServ domainuser.HashService,
 	}
 }
 
-func (c *UseCase) Execute(ctx context.Context, input applicationuser.LoginInput) (string, error) {
-	user, err := c.userRepository.FindByUsername(ctx, input.Username)
+func (uc *UseCase) Execute(ctx context.Context, input applicationuser.LoginInput) (string, error) {
+	user, err := uc.userRepository.FindByUsername(ctx, input.Username)
 	if err != nil {
 		return "", err
 	}
@@ -33,11 +33,11 @@ func (c *UseCase) Execute(ctx context.Context, input applicationuser.LoginInput)
 		return "", applicationuser.ErrInvalidCredentials
 	}
 
-	if err := c.hashService.Compare(input.Password, user.HashedPassword()); err != nil {
+	if err := uc.hashService.Compare(input.Password, user.HashedPassword()); err != nil {
 		return "", applicationuser.ErrInvalidCredentials
 	}
 
-	token, err := c.jwtService.GenerateSignedToken(user)
+	token, err := uc.jwtService.GenerateSignedToken(user)
 	if err != nil {
 		return "", err
 	}

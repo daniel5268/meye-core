@@ -27,7 +27,6 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 		DoUpdates: clause.Assignments(map[string]interface{}{
 			"username":        userModel.Username,
 			"hashed_password": userModel.HashedPassword,
-			"role":            userModel.Role,
 			"updated_at":      time.Now(),
 		}),
 	}).Create(userModel)

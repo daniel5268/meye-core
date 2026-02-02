@@ -25,13 +25,13 @@ func NewUseCase(usRepo domainuser.Repository, idServ shared.IdentificationServic
 	}
 }
 
-func (c *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserInput) (applicationuser.UserOutput, error) {
-	newUser, err := user.NewUser(input.Username, input.Password, input.Role, c.identificationService, c.hashService)
+func (uc *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserInput) (applicationuser.UserOutput, error) {
+	newUser, err := user.NewUser(input.Username, input.Password, input.Role, uc.identificationService, uc.hashService)
 	if err != nil {
 		return applicationuser.UserOutput{}, err
 	}
 
-	existingUser, err := c.userRepository.FindByUsername(ctx, input.Username)
+	existingUser, err := uc.userRepository.FindByUsername(ctx, input.Username)
 	if err != nil {
 		return applicationuser.UserOutput{}, err
 	}
@@ -40,7 +40,7 @@ func (c *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserI
 		return applicationuser.UserOutput{}, applicationuser.ErrUsernameAlreadyExists
 	}
 
-	if err := c.userRepository.Save(ctx, newUser); err != nil {
+	if err := uc.userRepository.Save(ctx, newUser); err != nil {
 		return applicationuser.UserOutput{}, err
 	}
 

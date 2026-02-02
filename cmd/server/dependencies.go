@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"meye-core/internal/application/campaign"
+	"meye-core/internal/application/campaign/createcampaign"
 	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/application/user/login"
@@ -13,6 +15,7 @@ import (
 	"meye-core/internal/infrastructure/hash"
 	"meye-core/internal/infrastructure/identification"
 	"meye-core/internal/infrastructure/jwt"
+	postgresCampaignRepo "meye-core/internal/infrastructure/repository/campaign/postgres"
 	postgresUserRepo "meye-core/internal/infrastructure/repository/user/postgres"
 
 	"github.com/joho/godotenv"
@@ -26,12 +29,18 @@ type UserUseCases struct {
 	Login      user.LoginUseCase
 }
 
+type CampaignUseCases struct {
+	CreateCampaign campaign.CreateCampaignUseCase
+}
+
 type UseCases struct {
-	User *UserUseCases
+	User     *UserUseCases
+	Campaign *CampaignUseCases
 }
 
 type Repositories struct {
-	User *postgresUserRepo.Repository
+	User     *postgresUserRepo.Repository
+	Campaign *postgresCampaignRepo.Repository
 }
 
 type Services struct {
@@ -41,8 +50,9 @@ type Services struct {
 }
 
 type Handlers struct {
-	User *handler.UserHandler
-	Auth *handler.AuthHandler
+	User     *handler.UserHandler
+	Auth     *handler.AuthHandler
+	Campaign *handler.CampaignHandler
 }
 
 type DependencyContainer struct {
@@ -123,7 +133,8 @@ func (c *DependencyContainer) initializeServices() {
 
 func (c *DependencyContainer) initializeRepositories() {
 	c.Repositories = &Repositories{
-		User: postgresUserRepo.New(c.Database),
+		User:     postgresUserRepo.New(c.Database),
+		Campaign: postgresCampaignRepo.New(c.Database),
 	}
 }
 
@@ -141,20 +152,28 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Services.JWT,
 			),
 		},
+		Campaign: &CampaignUseCases{
+			CreateCampaign: createcampaign.NewUseCase(
+				c.Repositories.Campaign,
+				c.Services.Identification,
+			),
+		},
 	}
 }
 
 func (c *DependencyContainer) initializeHandlers() {
 	c.Handlers = &Handlers{
-		User: handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
-		Auth: handler.NewAuthHandler(c.Config.Api.ApiKey, *c.Services.JWT, c.Repositories.User),
+		User:     handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
+		Auth:     handler.NewAuthHandler(c.Config.Api.ApiKey, *c.Services.JWT, c.Repositories.User),
+		Campaign: handler.NewCampaignHandler(c.UseCases.Campaign.CreateCampaign),
 	}
 }
 
 func (c *DependencyContainer) initializeRouter() {
 	c.APIRouter = api.NewRouter(&api.Handlers{
-		UserHandler: c.Handlers.User,
-		AuthHandler: c.Handlers.Auth,
+		UserHandler:     c.Handlers.User,
+		AuthHandler:     c.Handlers.Auth,
+		CampaignHandler: c.Handlers.Campaign,
 	})
 	logrus.Debug("Router initialized")
 }
