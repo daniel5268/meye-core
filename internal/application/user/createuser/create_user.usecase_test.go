@@ -5,6 +5,7 @@ import (
 	"errors"
 	applicationuser "meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
+	"meye-core/internal/domain/user"
 	"meye-core/tests/mocks"
 	"meye-core/tests/testdata"
 	"testing"
@@ -29,7 +30,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 	errTest := errors.New("mock_err")
 
-	defaultInput := createuser.Input{
+	defaultInput := applicationuser.CreateUserInput{
 		Username: testdata.Username,
 		Password: testdata.Password,
 		Role:     testdata.Role,
@@ -37,7 +38,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		input      createuser.Input
+		input      applicationuser.CreateUserInput
 		want       want
 		setupMocks func()
 	}{
@@ -61,6 +62,11 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				hashServiceMock.EXPECT().
 					Hash(testdata.Password).
 					Return(testdata.HashedPassword, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					FindByUsername(ctx, testdata.Username).
+					Return(nil, nil).
 					Times(1)
 
 				userRepoMock.EXPECT().
@@ -88,6 +94,11 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 					Times(1)
 
 				userRepoMock.EXPECT().
+					FindByUsername(ctx, testdata.Username).
+					Return(nil, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
 					Save(ctx, gomock.Any()).
 					Return(errTest).
 					Times(1)
@@ -109,6 +120,73 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				hashServiceMock.EXPECT().
 					Hash(testdata.Password).
 					Return("", errTest).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					FindByUsername(ctx, testdata.Username).
+					Times(0)
+
+				userRepoMock.EXPECT().
+					Save(ctx, gomock.Any()).
+					Times(0)
+			},
+		},
+		{
+			name:  "username already exists",
+			input: defaultInput,
+			want: want{
+				output: applicationuser.UserOutput{},
+				err:    applicationuser.ErrUsernameAlreadyExists,
+			},
+			setupMocks: func() {
+				existingUser := user.CreateUserWithoutValidation(
+					"existing-id",
+					testdata.Username,
+					testdata.HashedPassword,
+					testdata.Role,
+				)
+
+				idServiceMock.EXPECT().
+					GenerateID().
+					Return(testdata.UserID).
+					Times(1)
+
+				hashServiceMock.EXPECT().
+					Hash(testdata.Password).
+					Return(testdata.HashedPassword, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					FindByUsername(ctx, testdata.Username).
+					Return(existingUser, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					Save(ctx, gomock.Any()).
+					Times(0)
+			},
+		},
+		{
+			name:  "error on find by username",
+			input: defaultInput,
+			want: want{
+				output: applicationuser.UserOutput{},
+				err:    errTest,
+			},
+			setupMocks: func() {
+				idServiceMock.EXPECT().
+					GenerateID().
+					Return(testdata.UserID).
+					Times(1)
+
+				hashServiceMock.EXPECT().
+					Hash(testdata.Password).
+					Return(testdata.HashedPassword, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					FindByUsername(ctx, testdata.Username).
+					Return(nil, errTest).
 					Times(1)
 
 				userRepoMock.EXPECT().

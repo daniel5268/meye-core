@@ -53,3 +53,18 @@ func (r *Repository) FindByUsername(ctx context.Context, username string) (*user
 	domainUser := userModel.ToDomainUser()
 	return domainUser, nil
 }
+
+func (r *Repository) FindByID(ctx context.Context, id string) (*user.User, error) {
+	var userModel User
+	result := r.db.Where("id = ?", id).First(&userModel)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, result.Error
+	}
+
+	domainUser := userModel.ToDomainUser()
+	return domainUser, nil
+}
