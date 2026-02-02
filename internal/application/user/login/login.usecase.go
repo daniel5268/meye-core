@@ -6,6 +6,9 @@ import (
 	domainuser "meye-core/internal/domain/user"
 )
 
+// Compile-time check to ensure UseCase implements the port interface
+var _ applicationuser.LoginUseCase = (*UseCase)(nil)
+
 type UseCase struct {
 	userRepository domainuser.Repository
 	hashService    domainuser.HashService
@@ -20,7 +23,7 @@ func NewUseCase(userRepo domainuser.Repository, hashServ domainuser.HashService,
 	}
 }
 
-func (c *UseCase) Execute(ctx context.Context, input Input) (string, error) {
+func (c *UseCase) Execute(ctx context.Context, input applicationuser.LoginInput) (string, error) {
 	user, err := c.userRepository.FindByUsername(ctx, input.Username)
 	if err != nil {
 		return "", err

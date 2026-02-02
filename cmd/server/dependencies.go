@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/application/user/login"
 	"meye-core/internal/config"
@@ -21,8 +22,8 @@ import (
 )
 
 type UserUseCases struct {
-	CreateUser *createuser.UseCase
-	Login      *login.UseCase
+	CreateUser user.CreateUserUseCase
+	Login      user.LoginUseCase
 }
 
 type UseCases struct {
@@ -146,7 +147,7 @@ func (c *DependencyContainer) initializeUseCases() {
 func (c *DependencyContainer) initializeHandlers() {
 	c.Handlers = &Handlers{
 		User: handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
-		Auth: handler.NewAuthHandler(c.Config.Api.ApiKey),
+		Auth: handler.NewAuthHandler(c.Config.Api.ApiKey, *c.Services.JWT, c.Repositories.User),
 	}
 }
 

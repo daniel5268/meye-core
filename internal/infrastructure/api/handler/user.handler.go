@@ -1,8 +1,7 @@
 package handler
 
 import (
-	"meye-core/internal/application/user/createuser"
-	"meye-core/internal/application/user/login"
+	"meye-core/internal/application/user"
 	dto "meye-core/internal/infrastructure/api/handler/dto/user"
 	"net/http"
 
@@ -10,11 +9,11 @@ import (
 )
 
 type UserHandler struct {
-	createUserUseCase *createuser.UseCase
-	loginUseCase      *login.UseCase
+	createUserUseCase user.CreateUserUseCase
+	loginUseCase      user.LoginUseCase
 }
 
-func NewUserHandler(createUserUC *createuser.UseCase, loginUseCase *login.UseCase) *UserHandler {
+func NewUserHandler(createUserUC user.CreateUserUseCase, loginUseCase user.LoginUseCase) *UserHandler {
 	return &UserHandler{
 		createUserUseCase: createUserUC,
 		loginUseCase:      loginUseCase,
@@ -29,7 +28,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	input := createuser.Input{
+	input := user.CreateUserInput{
 		Username: reqBody.Username,
 		Password: reqBody.Password,
 		Role:     reqBody.Role,
@@ -52,7 +51,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	input := login.Input{
+	input := user.LoginInput{
 		Username: reqBody.Username,
 		Password: reqBody.Password,
 	}
