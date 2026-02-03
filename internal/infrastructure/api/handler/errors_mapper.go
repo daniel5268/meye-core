@@ -4,6 +4,7 @@ import (
 	"errors"
 	applicationcampaign "meye-core/internal/application/campaign"
 	applicationuser "meye-core/internal/application/user"
+	domaincampaign "meye-core/internal/domain/campaign"
 	domainuser "meye-core/internal/domain/user"
 	"net/http"
 
@@ -40,6 +41,11 @@ func respondMappedError(c *gin.Context, err error) {
 	case errors.Is(err, domainuser.ErrUserNotPlayer):
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: "User is not a player",
+			Code:  domainuser.ErrUserNotPlayer.Error(),
+		})
+	case errors.Is(err, domaincampaign.ErrUserNotInvited):
+		c.JSON(http.StatusNotAcceptable, ErrorResponse{
+			Error: "User should be invited to create PJs in a campaign",
 			Code:  domainuser.ErrUserNotPlayer.Error(),
 		})
 	default:

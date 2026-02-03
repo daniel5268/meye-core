@@ -16,7 +16,7 @@ import (
 
 func TestCreateUserUseCase_Execute(t *testing.T) {
 	var idServiceMock *mocks.MockIdentificationService
-	var userRepoMock *mocks.MockRepository
+	var userRepoMock *mocks.MockUserRepository
 	var hashServiceMock *mocks.MockHashService
 
 	type want struct {
@@ -203,7 +203,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 			idServiceMock = mocks.NewMockIdentificationService(ctrl)
 			hashServiceMock = mocks.NewMockHashService(ctrl)
-			userRepoMock = mocks.NewMockRepository(ctrl)
+			userRepoMock = mocks.NewMockUserRepository(ctrl)
 
 			tt.setupMocks()
 

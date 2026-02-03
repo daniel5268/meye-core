@@ -10,6 +10,7 @@ type Campaign struct {
 	masterID    string
 	name        string
 	invitations []Invitation
+	pjs         []PJ
 }
 
 func NewCampaign(masterID, name string, identificationService shared.IdentificationService) *Campaign {
@@ -33,16 +34,59 @@ func (c *Campaign) InviteUser(u *user.User, identificationService shared.Identif
 	return invitation, nil
 }
 
+func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificationService shared.IdentificationService) (*PJ, error) {
+	inv := c.GetPendingUserInvitation(userID)
+	if inv == nil {
+		return nil, ErrUserNotInvited
+	}
+
+	var supernaturalStats *SupernaturalStats
+	if params.PjType == PJTypeSupernatural {
+		supernaturalStats = &SupernaturalStats{
+			skills: []Skill{
+				{
+					transformations: []uint{},
+				},
+			},
+		}
+	}
+
+	inv.accept()
+
+	pj := &PJ{
+		id:                identificationService.GenerateID(),
+		userID:            userID,
+		name:              params.Name,
+		weight:            params.Weight,
+		height:            params.Height,
+		age:               params.Age,
+		look:              params.Look,
+		charisma:          params.Charisma,
+		villainy:          params.Villainy,
+		heroism:           params.Heroism,
+		pjType:            params.PjType,
+		basicTalent:       params.BasicTalent,
+		specialTalent:     params.SpecialTalent,
+		supernaturalStats: supernaturalStats,
+	}
+
+	c.pjs = append(c.pjs, *pj)
+
+	return pj, nil
+}
+
 func (c *Campaign) ID() string                { return c.id }
 func (c *Campaign) MasterID() string          { return c.masterID }
 func (c *Campaign) Name() string              { return c.name }
 func (c *Campaign) Invitations() []Invitation { return c.invitations }
+func (c *Campaign) PJs() []PJ                 { return c.pjs }
 
-func CreateCampaignWithoutValidation(id, masterID, name string, invitations []Invitation) *Campaign {
+func CreateCampaignWithoutValidation(id, masterID, name string, invitations []Invitation, pjs []PJ) *Campaign {
 	return &Campaign{
 		id:          id,
 		masterID:    masterID,
 		name:        name,
 		invitations: invitations,
+		pjs:         pjs,
 	}
 }
