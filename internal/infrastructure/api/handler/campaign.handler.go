@@ -11,12 +11,14 @@ import (
 type CampaignHandler struct {
 	createCampaignUseCase campaign.CreateCampaignUseCase
 	inviteUserUseCase     campaign.InviteUserUseCase
+	createPJUseCase       campaign.CreatePJUseCase
 }
 
-func NewCampaignHandler(createCampaignUseCase campaign.CreateCampaignUseCase, inviteUserUseCase campaign.InviteUserUseCase) *CampaignHandler {
+func NewCampaignHandler(createCampaignUseCase campaign.CreateCampaignUseCase, inviteUserUseCase campaign.InviteUserUseCase, createPJUseCase campaign.CreatePJUseCase) *CampaignHandler {
 	return &CampaignHandler{
 		createCampaignUseCase: createCampaignUseCase,
 		inviteUserUseCase:     inviteUserUseCase,
+		createPJUseCase:       createPJUseCase,
 	}
 }
 
@@ -41,7 +43,7 @@ func (h *CampaignHandler) CreateCampaign(c *gin.Context) {
 		return
 	}
 
-	input := &campaign.CreateCampaignInput{
+	input := campaign.CreateCampaignInput{
 		Name:     reqBody.Name,
 		MasterID: auth.UserID,
 	}
@@ -56,7 +58,7 @@ func (h *CampaignHandler) CreateCampaign(c *gin.Context) {
 }
 
 func (h *CampaignHandler) InviteUser(c *gin.Context) {
-	var pathParams dto.InviteUserPathParams
+	var pathParams dto.CampaignPathParams
 
 	if err := c.ShouldBindUri(&pathParams); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -70,7 +72,7 @@ func (h *CampaignHandler) InviteUser(c *gin.Context) {
 		return
 	}
 
-	input := &campaign.InviteUserInput{
+	input := campaign.InviteUserInput{
 		CampaignID: pathParams.CampaignID,
 		UserID:     reqBody.UserID,
 	}
@@ -82,4 +84,60 @@ func (h *CampaignHandler) InviteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, dto.MapInvitationOutputBody(output))
+}
+
+func (h *CampaignHandler) CreatePJ(c *gin.Context) {
+	var pathParams dto.CampaignPathParams
+
+	if err := c.ShouldBindUri(&pathParams); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var reqBody dto.CreatePJInputBody
+
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	authValue, exists := c.Get(AuthKey)
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	auth, ok := authValue.(AuthContext)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	input := campaign.CreatePJInput{
+		IDs: campaign.UserCampaignIDs{
+			UserID:     auth.UserID,
+			CampaignID: pathParams.CampaignID,
+		},
+		PJInfo: campaign.CreatePJInfo{
+			Name:          reqBody.Name,
+			Weight:        reqBody.Weight,
+			Height:        reqBody.Height,
+			Age:           reqBody.Age,
+			Look:          reqBody.Look,
+			Charisma:      reqBody.Charisma,
+			Villainy:      reqBody.Villainy,
+			Heroism:       reqBody.Heroism,
+			PjType:        reqBody.PjType,
+			BasicTalent:   reqBody.BasicTalent,
+			SpecialTalent: reqBody.SpecialTalent,
+		},
+	}
+
+	output, err := h.createPJUseCase.Execute(c.Request.Context(), input)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.MapPJOutputBody(output))
 }

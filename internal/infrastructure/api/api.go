@@ -71,16 +71,19 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 
 func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 	campaigns := group.Group("/campaigns")
+	campaigns.Use(r.handlers.AuthHandler.AuthMiddleware())
 	{
 		campaigns.POST("",
-			r.handlers.AuthHandler.AuthMiddleware(),
 			r.handlers.AuthHandler.RequireMasterRole(),
 			r.handlers.CampaignHandler.CreateCampaign,
 		)
 		campaigns.POST("/:campaignID/invitations",
-			r.handlers.AuthHandler.AuthMiddleware(),
 			r.handlers.AuthHandler.RequireCampaignMaster(),
 			r.handlers.CampaignHandler.InviteUser,
+		)
+		campaigns.POST("/:campaignID/pjs",
+			r.handlers.AuthHandler.RequirePlayerRole(),
+			r.handlers.CampaignHandler.CreatePJ,
 		)
 	}
 }

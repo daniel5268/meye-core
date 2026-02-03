@@ -73,7 +73,7 @@ func TestCampaign_AddPJ(t *testing.T) {
 						0,
 					),
 					campaign.CreateSupernaturalStatsWithoutValidation([]campaign.Skill{
-						campaign.CreateSkillWithoutValidation([]uint{}),
+						campaign.CreateSkillWithoutValidation([]uint{0}),
 					}),
 				),
 				err: nil,
