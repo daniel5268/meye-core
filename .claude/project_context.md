@@ -1,108 +1,284 @@
 # Meye-Core Project Context
 
+## Project Overview
+
+Meye-Core is an RPG campaign management system built with **Hexagonal Architecture** (Ports and Adapters) and **Domain-Driven Design** principles. The system manages users, campaigns, invitations, and player characters (PJs) with sophisticated character progression mechanics.
+
 ## Architecture Overview
 
-This project follows **Hexagonal Architecture** (Ports and Adapters pattern) with clear separation of concerns across three layers.
+This project follows **Hexagonal Architecture** with clear separation across three layers:
+
+```
+Domain Layer (Core Business Logic)
+    ↑
+Application Layer (Use Cases)
+    ↑
+Infrastructure Layer (Adapters: HTTP, Database, Services)
+```
+
+**Key Principle**: Dependencies point inward. Infrastructure depends on Application and Domain, but never the reverse.
 
 ## Project Structure
 
 ```
-internal/
-├── domain/                          # Domain Layer (Business Logic & Entities)
-│   ├── user/
-│   │   ├── user.entity.go           # Domain entities
-│   │   ├── user.repository.port.go  # Repository port interfaces
-│   │   ├── hash.service.port.go     # Service port interfaces
-│   │   └── jwt.service.port.go
-│   └── shared/
-│       └── identification.service.port.go
+meye-core/
+├── cmd/
+│   └── server/
+│       ├── main.go                    # Application entry point
+│       └── dependencies.go            # Dependency injection container
 │
-├── application/                     # Application Layer (Use Cases)
-│   └── user/
-│       ├── ports.go                 # Use case port interfaces + Input DTOs
-│       ├── user.output.go           # Shared output DTOs
-│       ├── errors.go                # Application-level errors
-│       ├── createuser/
-│       │   └── create_user.usecase.go  # Concrete use case implementation
-│       └── login/
-│           └── login.usecase.go
+├── internal/
+│   ├── domain/                        # Domain Layer (Business Logic)
+│   │   ├── user/
+│   │   │   ├── user.entity.go
+│   │   │   ├── user.repository.port.go
+│   │   │   ├── hash.service.port.go
+│   │   │   ├── jwt.service.port.go
+│   │   │   └── errors.go
+│   │   ├── campaign/
+│   │   │   ├── campaign.aggregate.go         # Aggregate root
+│   │   │   ├── invitation.entity.go          # Child entity
+│   │   │   ├── pj.entity.go                  # Child entity (complex)
+│   │   │   ├── campaign.repository.port.go
+│   │   │   ├── calculations.go               # Shared calculation logic
+│   │   │   ├── calculations_basic.go         # Basic stats XP
+│   │   │   ├── calculations_special.go       # Special stats XP
+│   │   │   ├── calculations_supernatural.go  # Supernatural stats XP
+│   │   │   ├── errors.go
+│   │   │   └── *_test.go                     # Domain tests
+│   │   └── shared/
+│   │       └── identification.service.port.go
+│   │
+│   ├── application/                   # Application Layer (Use Cases)
+│   │   ├── user/
+│   │   │   ├── ports.go               # Use case interfaces
+│   │   │   ├── dto.go                 # Input + Output DTOs
+│   │   │   ├── errors.go              # Application errors
+│   │   │   ├── createuser/
+│   │   │   │   └── create_user.usecase.go
+│   │   │   └── login/
+│   │   │       └── login.usecase.go
+│   │   └── campaign/
+│   │       ├── ports.go
+│   │       ├── dto.go
+│   │       ├── errors.go
+│   │       ├── createcampaign/
+│   │       │   └── create_campaign.usecase.go
+│   │       └── inviteuser/
+│   │           └── invite_user.usecase.go
+│   │
+│   ├── infrastructure/                # Infrastructure Layer (Adapters)
+│   │   ├── api/
+│   │   │   ├── api.go                 # Router setup
+│   │   │   ├── handler/
+│   │   │   │   ├── user.handler.go    # HTTP handlers
+│   │   │   │   ├── campaign.handler.go
+│   │   │   │   ├── auth.handler.go    # Auth middleware
+│   │   │   │   ├── errors_mapper.go   # Error to HTTP mapping
+│   │   │   │   └── dto/               # HTTP request/response DTOs
+│   │   │   │       ├── user.dto.go
+│   │   │   │       └── campaign.dto.go
+│   │   │   └── validator/
+│   │   │       └── validators.go       # Custom validators
+│   │   ├── repository/
+│   │   │   ├── user/postgres/
+│   │   │   │   ├── user.repository.go
+│   │   │   │   └── user.model.go      # Database model
+│   │   │   └── campaign/postgres/
+│   │   │       ├── campaign.repository.go
+│   │   │       ├── campaign.model.go
+│   │   │       ├── campaign_invitation.model.go
+│   │   │       └── campaign_pj.model.go
+│   │   ├── hash/
+│   │   │   └── hash.service.go        # Bcrypt implementation
+│   │   ├── jwt/
+│   │   │   └── jwt.service.go         # JWT implementation
+│   │   └── identification/
+│   │       └── identification.service.go  # UUID generation
+│   │
+│   └── config/
+│       └── config.go                  # Configuration loading
 │
-└── infrastructure/                  # Infrastructure Layer (Adapters)
-    ├── api/
-    │   ├── handler/
-    │   │   ├── auth.handler.go      # Authentication & authorization middleware
-    │   │   ├── user.handler.go      # HTTP handlers
-    │   │   └── dto/                 # HTTP-specific DTOs
-    │   └── router.go
-    ├── repository/
-    │   └── user/
-    │       └── postgres/
-    │           └── user.repository.go  # Repository implementation
-    ├── hash/
-    │   └── hash.service.go          # Service implementations
-    ├── jwt/
-    │   └── jwt.service.go
-    └── identification/
-        └── identification.service.go
+├── tests/
+│   ├── mocks/                         # Generated mocks (gomock)
+│   └── testdata/                      # Test data builders
+│       ├── user.testdata.go
+│       ├── campaign.testdata.go
+│       └── pj.testdata.go
+│
+├── migrations/                        # Database migrations
+│   ├── 000_create_users_table.up.sql
+│   ├── 000_create_users_table.down.sql
+│   ├── 001_create_campaign_table.up.sql
+│   ├── 001_create_campaign_table.down.sql
+│   ├── 002_create_campaign_invitations_table.up.sql
+│   ├── 002_create_campaign_invitations_table.down.sql
+│   ├── 003_create_pjs_table.up.sql
+│   └── 003_create_pjs_table.down.sql
+│
+├── .env.example                       # Environment variables template
+├── go.mod
+└── go.sum
 ```
 
-## Layer Responsibilities
+## Domain Model
 
-### 1. Domain Layer (`internal/domain/`)
-**Purpose**: Core business logic, entities, and port interfaces
+### User Domain
 
-**What belongs here**:
-- Domain entities (e.g., `User`)
-- Business rules and validations
-- Port interfaces (contracts for repositories and services)
-- Domain-specific errors
+**Entity: User**
+- Properties: `id`, `username`, `hashedPassword`, `role`
+- Roles: `admin`, `master` (game master), `player`
+- Business rules:
+  - Password is hashed on entity creation
+  - Only players can be invited to campaigns
 
-**Dependencies**:
-- ✅ No dependencies on other layers
-- ✅ Pure Go with minimal external dependencies
+**Repository Port**: `Save()`, `FindByUsername()`, `FindByID()`
 
-**File naming conventions**:
-- Entities: `*.entity.go`
-- Port interfaces: `*.port.go` or `*.repository.port.go`
+**Service Ports**: `HashService`, `JWTService`
 
-**Example**:
-```go
-// user.repository.port.go
-package user
+---
 
-type Repository interface {
-    Save(ctx context.Context, user *User) error
-    FindByID(ctx context.Context, id string) (*User, error)
-}
-```
+### Campaign Domain (Complex Aggregate)
 
-### 2. Application Layer (`internal/application/`)
-**Purpose**: Orchestrate business workflows (use cases)
+The campaign domain is the core of the application with rich business logic for RPG campaign and character management.
 
-**What belongs here**:
-- Use case implementations
-- Use case port interfaces (at the boundary)
-- Input/Output DTOs
-- Application-level errors
+#### Aggregate Root: Campaign
 
-**Dependencies**:
-- ✅ Can depend on domain layer (entities and domain ports)
-- ❌ MUST NOT depend on infrastructure layer
+**Entity: Campaign** (`campaign.aggregate.go`)
+- Properties: `id`, `masterID`, `name`, `invitations[]`, `pjs[]`
+- Aggregate children: Invitations, PJs
+- Methods:
+  - `InviteUser(user, identificationService) -> Invitation` - creates invitation for player
+  - `AddPJ(userID, params, identificationService) -> PJ` - creates PJ after invitation
+  - `GetPendingUserInvitation(userID) -> Invitation` - finds pending invitation
 
-**File organization**:
+**Business Rules**:
+- Only players can be invited
+- User must have pending invitation to create PJ
+- Invitation automatically accepts when PJ is created
+
+---
+
+#### Child Entity: Invitation
+
+**Entity: Invitation** (`invitation.entity.go`)
+- Properties: `id`, `campaignID`, `userID`, `state`
+- States: `pending`, `accepted`
+- Internal method: `accept()` - transitions to accepted state
+
+---
+
+#### Child Entity: PJ (Player Character)
+
+**Entity: PJ** (`pj.entity.go`)
+
+The most complex entity in the system, representing a player character with detailed stats and progression.
+
+**Core Properties**:
+- `id`, `userID`, `name`
+- Physical attributes: `weight`, `height`, `age`, `look`
+- Character traits: `charisma`, `villainy`, `heroism`
+- Type & talents: `pjType`, `basicTalent`, `specialTalent`
+- Stats: `basicStats`, `specialStats`, `supernaturalStats`
+
+**Enums**:
+- `PJType`: `human`, `supernatural`
+- `BasicTalentType`: `physical`, `mental`, `coordination`, `energy`
+- `SpecialTalentType`: `physical`, `mental`, `energy`
+
+**Value Objects** (Immutable stat structures):
+
+1. **Basic Stats** (for all PJs):
+   - `Physical`: strength, agility, speed, resistance
+   - `Mental`: intelligence, wisdom, concentration, will
+   - `Coordination`: precision, calculation, range, reflexes
+   - `BasicStats`: physical, mental, coordination, life
+
+2. **Special Stats** (for all PJs):
+   - `PhysicalSkills`: empowerment, vitalControl
+   - `MentalSkills`: illusion, mentalControl
+   - `EnergySkills`: objectHandling, energyHandling
+   - `SpecialStats`: physical, mental, energy, energyTank
+
+3. **Supernatural Stats** (only for supernatural PJs):
+   - `Skill`: transformations[] (array of uint)
+   - `SupernaturalStats`: skills[] (nullable)
+
+---
+
+#### Domain Logic: XP Calculation System
+
+The campaign domain includes a sophisticated XP (experience points) calculation system for character progression.
+
+**Files**:
+- `calculations.go` - Base calculation utilities
+- `calculations_basic.go` - Basic stats XP calculation
+- `calculations_special.go` - Special stats XP calculation
+- `calculations_supernatural.go` - Supernatural stats XP calculation
+
+**Key Concepts**:
+
+1. **Level Steps**: Different progression speeds for stat categories
+   - Basic stats: level step = 10 (faster progression)
+   - Special stats: level step = 100 (slower progression)
+   - Supernatural stats: level step = 100
+
+2. **Talent Multipliers**: Cost varies based on character talent
+   - Basic stats:
+     - Talented stat: 1x cost
+     - Non-talented stat: 3x cost
+   - Special stats:
+     - Talented stat: 1x cost
+     - Non-talented stat: 2x cost
+   - Energy tank:
+     - Energy talent: 50% cost reduction
+
+3. **XP Formula**: `XP = completeLevels * (completeLevels + firstLevelCost * 2 - 1) / 2 * levelStep + partialPoints * firstLevelCost`
+   - Calculates total XP based on stat points
+   - Different costs for first level based on talents
+
+**Methods**:
+- `BasicStats.GetRequiredXP(basicTalent) -> int`
+- `SpecialStats.GetRequiredXP(basicTalent, specialTalent) -> int`
+- `SupernaturalStats.GetRequiredXP() -> int`
+
+**Use Case**: These calculations determine character progression costs and enable balanced character development in the RPG system.
+
+---
+
+#### Repository Port
+
+**CampaignRepository** (`campaign.repository.port.go`)
+- `Save(ctx, campaign)` - atomically saves aggregate with all children
+- `FindByID(ctx, id)` - loads campaign with all related entities
+
+**Aggregate Persistence Pattern**:
+The repository handles the entire aggregate atomically:
+1. Upserts campaign
+2. Upserts/deletes invitations (synchronizes with domain state)
+3. Upserts/deletes PJs (synchronizes with domain state)
+4. All in a single transaction
+
+---
+
+## Application Layer
+
+### Use Case Pattern
+
+**Structure**:
 ```
 application/
-└── user/
-    ├── ports.go              # Use case interfaces + Input DTOs (at boundary)
-    ├── user.output.go        # Shared output DTOs
-    ├── errors.go             # Application errors
-    └── createuser/
-        └── create_user.usecase.go  # Concrete implementation
+└── [domain]/
+    ├── ports.go        # Use case interfaces + Input DTOs
+    ├── dto.go          # Output DTOs + mappers
+    ├── errors.go       # Application-level errors
+    └── [usecase]/
+        └── [usecase].usecase.go  # Implementation
 ```
 
-**Key Pattern - Use Case Ports**:
+**Key Pattern**: Use case ports defined at application boundary
 ```go
-// ports.go - Define use case interfaces at the application boundary
+// ports.go
 package user
 
 type CreateUserInput struct {
@@ -116,153 +292,312 @@ type CreateUserUseCase interface {
 }
 ```
 
-**Key Pattern - Use Case Implementation**:
+**Implementation Pattern**:
 ```go
 // createuser/create_user.usecase.go
 package createuser
 
-// Compile-time check to ensure implementation matches port
+// Compile-time interface check
 var _ applicationuser.CreateUserUseCase = (*UseCase)(nil)
 
 type UseCase struct {
-    userRepository domainuser.Repository  // Depends on domain ports
-    hashService    domainuser.HashService
+    userRepository       domainuser.Repository  // Domain port
+    identificationService shared.IdentificationService
+    hashService          domainuser.HashService
 }
 
-func (c *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserInput) (applicationuser.UserOutput, error) {
-    // Orchestrate domain objects and services
+func (u *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserInput) (applicationuser.UserOutput, error) {
+    // Use case orchestration logic
 }
 ```
 
-### 3. Infrastructure Layer (`internal/infrastructure/`)
-**Purpose**: Implement adapters for external systems
+---
 
-**What belongs here**:
-- HTTP handlers (implement REST API)
-- Repository implementations (Postgres, Redis, etc.)
-- Service implementations (JWT, hashing, external APIs)
-- Database models
-- HTTP-specific DTOs
+### Current Use Cases
 
-**Dependencies**:
-- ✅ Can depend on domain ports (implements them)
-- ✅ Can depend on application ports (handlers use them)
-- ❌ MUST NOT depend on concrete application or domain implementations
+#### User Use Cases
 
-**Key Pattern - Handlers Depend on Use Case Ports**:
+1. **CreateUser** (`createuser/create_user.usecase.go`)
+   - Dependencies: userRepository, identificationService, hashService
+   - Flow:
+     1. Create user entity (validates & hashes password)
+     2. Check username uniqueness
+     3. Save to repository
+     4. Return user output
+   - Errors: `ErrUsernameAlreadyExists`
+
+2. **Login** (`login/login.usecase.go`)
+   - Dependencies: userRepository, hashService, jwtService
+   - Flow:
+     1. Find user by username
+     2. Verify password hash
+     3. Generate JWT token
+     4. Return token
+   - Errors: `ErrInvalidCredentials`, `ErrUserNotFound`
+
+---
+
+#### Campaign Use Cases
+
+1. **CreateCampaign** (`createcampaign/create_campaign.usecase.go`)
+   - Dependencies: campaignRepository, identificationService
+   - Flow:
+     1. Create campaign aggregate
+     2. Save to repository
+     3. Return campaign output
+
+2. **InviteUser** (`inviteuser/invite_user.usecase.go`)
+   - Dependencies: campaignRepository, userRepository, identificationService
+   - Flow:
+     1. Find campaign by ID
+     2. Find user by ID
+     3. Call campaign.InviteUser() (domain logic validates user is player)
+     4. Save campaign aggregate (with new invitation)
+     5. Return invitation output
+   - Errors: `ErrCampaignNotFound`, `ErrUserNotFound`, `ErrUserNotPlayer`
+
+---
+
+## Infrastructure Layer
+
+### API Layer
+
+**Framework**: Gin (HTTP web framework)
+
+**Router Structure** (`api.go`):
 ```go
-// user.handler.go
-package handler
+type Router struct {
+    router   *gin.Engine
+    handlers *Handlers
+}
+```
 
-import "meye-core/internal/application/user"
+#### Endpoints
 
+**Public Endpoints**:
+- `GET /health` - Health check
+- `POST /api/v1/users/login` - User login
+
+**Protected Endpoints**:
+- `POST /api/v1/users` - Create user (requires admin role)
+- `POST /api/v1/campaigns` - Create campaign (requires master role)
+- `POST /api/v1/campaigns/:campaignID/invitations` - Invite user (requires campaign master)
+
+---
+
+### Handlers
+
+**Handler Pattern**: Depend on use case ports, not concrete implementations
+
+```go
 type UserHandler struct {
     createUserUseCase user.CreateUserUseCase  // Interface, not concrete type
     loginUseCase      user.LoginUseCase
 }
-
-func NewUserHandler(createUserUC user.CreateUserUseCase, loginUseCase user.LoginUseCase) *UserHandler {
-    return &UserHandler{
-        createUserUseCase: createUserUC,
-        loginUseCase:      loginUseCase,
-    }
-}
 ```
 
-## Common Patterns
+**Handler DTOs** (`handler/dto/`):
+- Request DTOs: validation tags (`required`, `min`, `max`, `alphanum`)
+- Response DTOs: consistent JSON structure
+- Separate from application DTOs (different layer responsibilities)
 
-### Adding a New Use Case
+---
 
-1. **Define Input DTO** in `internal/application/[domain]/ports.go`:
+### Authentication & Authorization
+
+**Auth Handler** (`handler/auth.handler.go`)
+
+**Middleware Functions**:
+1. `InternalAPIKeyMiddleware()` - Validates API key header
+2. `AuthMiddleware()` - Validates JWT Bearer token, sets user context
+3. `RequireRole(...roles)` - Generic role checker (OR logic)
+4. `RequireAdminRole()` - Admin only
+5. `RequireMasterRole()` - Master only
+6. `RequirePlayerRole()` - Player only
+7. `RequireCampaignMaster()` - Validates user is the campaign master (resource ownership)
+
+**Auth Context**:
 ```go
-type MyNewUseCaseInput struct {
-    Field1 string
-    Field2 int
+type AuthContext struct {
+    UserID string
 }
 ```
+- Stored in Gin context after successful JWT validation
+- Retrieved by handlers for authorization checks
 
-2. **Define Use Case Port** in `internal/application/[domain]/ports.go`:
+**Middleware Chain Example**:
 ```go
-type MyNewUseCase interface {
-    Execute(ctx context.Context, input MyNewUseCaseInput) (OutputDTO, error)
-}
+protected := router.Group("/api/v1")
+protected.Use(authHandler.AuthMiddleware())  // Validate JWT
+protected.Use(authHandler.RequireMasterRole())  // Check role
+
+protected.POST("/campaigns", campaignHandler.CreateCampaign)
 ```
 
-3. **Implement Use Case** in `internal/application/[domain]/myfeature/`:
+---
+
+### Error Handling
+
+**Error Mapping** (`handler/errors_mapper.go`)
+
+Central function maps domain/application errors to HTTP status codes:
 ```go
-package myfeature
-
-var _ applicationdomain.MyNewUseCase = (*UseCase)(nil)
-
-type UseCase struct {
-    // Dependencies (domain ports only)
-}
-
-func (u *UseCase) Execute(ctx context.Context, input applicationdomain.MyNewUseCaseInput) (applicationdomain.OutputDTO, error) {
-    // Implementation
-}
+func respondMappedError(c *gin.Context, err error)
 ```
 
-4. **Use in Handler** - depend on the port interface:
+**Mappings**:
+- `ErrUsernameAlreadyExists` → 409 Conflict
+- `ErrInvalidCredentials` → 401 Unauthorized
+- `ErrUserNotFound` → 404 Not Found
+- `ErrCampaignNotFound` → 404 Not Found
+- `ErrUserNotPlayer` → 400 Bad Request
+- `ErrUserNotInvited` → 400 Bad Request
+- Default → 500 Internal Server Error
+
+---
+
+### Repository Implementations
+
+#### User Repository (`repository/user/postgres/`)
+
+**Model**:
 ```go
-type MyHandler struct {
-    myUseCase applicationdomain.MyNewUseCase  // Interface
+type User struct {
+    ID             string `gorm:"primaryKey"`
+    Username       string `gorm:"unique"`
+    HashedPassword string
+    Role           string
+    CreatedAt      time.Time
+    UpdatedAt      time.Time
 }
 ```
 
-### Adding a New Domain Service
+**Methods**:
+- `Save()` - Upsert by ID with conflict resolution
+- `FindByUsername()` - Returns nil if not found
+- `FindByID()` - Returns nil if not found
 
-1. **Define Port** in `internal/domain/[domain]/[service].port.go`:
+**Mappers**:
+- `GetModelFromDomainUser(user) -> Model`
+- `(m *User) ToDomainUser() -> domain.User`
+
+---
+
+#### Campaign Repository (`repository/campaign/postgres/`)
+
+**Models**:
+
+1. `Campaign`: id, name, master_id, timestamps
+2. `CampaignInvitation`: id, campaign_id, user_id, state, timestamps
+3. `CampaignPJ`: id, campaign_id, user_id, [40+ stat columns], supernatural_stats (JSONB), timestamps
+
+**Complex Model: CampaignPJ**
+- Uses domain types directly: `campaign.PJType`, `campaign.BasicTalentType`, `campaign.SpecialTalentType`
+- All stat fields stored as separate columns for querying
+- Supernatural stats stored as JSONB (nullable for human PJs)
+- Custom GORM type `SupernaturalStatsJSON` implements `driver.Valuer` and `sql.Scanner`
+
+**Aggregate Save Pattern**:
 ```go
-package user
-
-type EmailService interface {
-    SendEmail(to, subject, body string) error
+func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        // 1. Upsert campaign
+        // 2. Upsert all invitations
+        // 3. Delete removed invitations
+        // 4. Upsert all PJs
+        // 5. Delete removed PJs
+    })
 }
 ```
 
-2. **Implement in Infrastructure** in `internal/infrastructure/email/`:
+**Synchronization Logic**:
+- Tracks IDs in domain aggregate
+- Inserts/updates entities present in aggregate
+- Deletes entities removed from aggregate
+- Ensures database reflects exact aggregate state
+
+---
+
+### Service Implementations
+
+1. **HashService** (`infrastructure/hash/`)
+   - Implementation: bcrypt with cost 12
+   - `Hash()`, `Compare()`
+
+2. **JWTService** (`infrastructure/jwt/`)
+   - Implementation: golang-jwt/jwt (HS256)
+   - Claims: UserID + standard claims (exp, iss)
+   - `GenerateSignedToken()`, `ValidateToken()`
+
+3. **IdentificationService** (`infrastructure/identification/`)
+   - Implementation: Google UUID (v4)
+   - `GenerateID()` - returns UUID as string
+
+---
+
+## Configuration
+
+**Structure** (`internal/config/config.go`):
 ```go
-package email
-
-type Service struct {
-    // SMTP config, etc.
-}
-
-func (s *Service) SendEmail(to, subject, body string) error {
-    // Implementation
+type Config struct {
+    Api      ApiConfig
+    Database DatabaseConfig
+    JWT      JWTConfig
 }
 ```
 
-3. **Wire in Dependency Injection** in `cmd/server/dependencies.go`
+**Environment Variables**:
+- `API_PORT` - Server port
+- `API_KEY` - Internal API key
+- `DATABASE_DSN` - Postgres connection string
+- `JWT_SECRET` - JWT signing secret
+- `JWT_ISSUER` - JWT issuer claim
+- `JWT_EXPIRATION_TIME` - Token expiration (duration string)
 
-### Authentication & Authorization Middleware
+**Loading**:
+- `.env` file for development (godotenv)
+- System environment variables for production
+- Validation: returns error if required fields missing
 
-**Location**: `internal/infrastructure/api/handler/auth.handler.go`
+---
 
-**Middleware Chain**:
-```go
-// 1. AuthMiddleware - validates JWT, sets UserID in context
-router.Use(authHandler.AuthMiddleware())
+## Database
 
-// 2. RequireRole - checks user role from database
-router.Use(authHandler.RequireMasterRole())        // Single role
-router.Use(authHandler.RequireRole(Master, Admin))  // Multiple roles (OR logic)
-```
+### ORM: GORM
 
-**Available Middleware**:
-- `InternalAPIKeyMiddleware()` - Check API key header
-- `AuthMiddleware()` - Validate JWT, set AuthContext
-- `RequireRole(...roles)` - Generic role checker (OR logic)
-- `RequireMasterRole()` - Master only
-- `RequireAdminRole()` - Admin only
-- `RequirePlayerRole()` - Player only
+**Connection**: PostgreSQL via DSN
 
-### Dependency Injection
+**Migration Management**: SQL files in `migrations/`
+- Naming: `XXX_description.up.sql` / `XXX_description.down.sql`
+- Applied manually or via migration tool
 
-**Location**: `cmd/server/dependencies.go`
+### Tables
 
-**Pattern**:
+1. **users**
+   - Columns: id (PK), username (unique), hashed_password, role, timestamps
+   - Indexes: unique username
+
+2. **campaigns**
+   - Columns: id (PK), master_id (FK), name, timestamps
+   - Foreign key: master_id → users(id) CASCADE
+
+3. **campaign_invitations**
+   - Columns: id (PK), campaign_id (FK), user_id (FK), state (enum), timestamps
+   - Foreign keys: campaign_id → campaigns(id) CASCADE, user_id → users(id) CASCADE
+   - Indexes: campaign_id, user_id, state
+   - Enum: invitation_state (pending, accepted)
+
+4. **pjs**
+   - Columns: id (PK), campaign_id (FK), user_id (FK), character info (name, weight, height, age, look, charisma, villainy, heroism), type/talent fields, 30+ stat columns, supernatural_stats (JSONB), timestamps
+   - Foreign keys: campaign_id → campaigns(id) CASCADE, user_id → users(id) CASCADE
+   - Indexes: campaign_id, user_id, pj_type
+   - Enums: pj_type, basic_talent_type, special_talent_type
+
+---
+
+## Dependency Injection
+
+**Container** (`cmd/server/dependencies.go`):
 ```go
 type DependencyContainer struct {
     Config       *config.Config
@@ -273,173 +608,589 @@ type DependencyContainer struct {
     Handlers     *Handlers
     APIRouter    *api.Router
 }
-
-// Initialization order:
-1. loadEnvironment()
-2. loadConfig()
-3. connectDatabase()
-4. initializeServices()    // Infrastructure services
-5. initializeRepositories() // Infrastructure repositories
-6. initializeUseCases()     // Application use cases (depend on domain ports)
-7. initializeHandlers()     // Infrastructure handlers (depend on use case ports)
-8. initializeRouter()       // API routes
 ```
 
-**Key Principle**: Use case ports in the UseCases struct:
+**Initialization Order**:
+1. `loadEnvironment()` - Load .env file
+2. `loadConfig()` - Parse environment variables
+3. `connectDatabase()` - Connect to Postgres
+4. `initializeServices()` - Create stateless services
+5. `initializeRepositories()` - Create repositories
+6. `initializeUseCases()` - Wire use cases with domain ports
+7. `initializeHandlers()` - Wire handlers with use case ports
+8. `initializeRouter()` - Setup routes and middleware
+
+**Key Pattern**: Use case structs hold interfaces
 ```go
 type UserUseCases struct {
-    CreateUser user.CreateUserUseCase  // Interface type
-    Login      user.LoginUseCase       // Interface type
+    CreateUser user.CreateUserUseCase  // Interface, not concrete type
+    Login      user.LoginUseCase
 }
 ```
 
-## Testing Patterns
+---
 
-### Use Case Tests
+## Testing
 
-**Location**: Same package as use case with `_test` suffix
+### Test Organization
 
-**Pattern**:
-```go
-package createuser_test
+**Test Types**:
+1. **Domain Tests**: In domain packages with `_test` suffix
+   - `campaign.aggregate_test.go` - Tests aggregate behavior
+   - `calculations_basic_test.go` - Tests XP calculation logic
+   - `calculations_special_test.go`
+   - `calculations_supernatural_test.go`
 
-func TestUseCase_Execute(t *testing.T) {
-    // 1. Setup mocks for domain ports
-    ctrl := gomock.NewController(t)
-    repoMock := mocks.NewMockRepository(ctrl)
+2. **Use Case Tests**: In use case packages with `_test` suffix
+   - Use mocks for domain ports
 
-    // 2. Setup expectations
-    repoMock.EXPECT().FindByID(ctx, "123").Return(user, nil)
+**Test Data Builders** (`tests/testdata/`):
+- `user.testdata.go` - User fixtures
+- `campaign.testdata.go` - Campaign fixtures
+- `pj.testdata.go` - PJ stat fixtures, complex value objects
 
-    // 3. Create use case with mocks
-    useCase := createuser.NewUseCase(repoMock, ...)
+---
 
-    // 4. Execute and assert
-    output, err := useCase.Execute(ctx, input)
-    assert.NoError(t, err)
-}
-```
+### Mock Generation
 
-### Generating Mocks
+**Tool**: `go.uber.org/mock/gomock`
 
-Use `go:generate` directives in port files:
+**Pattern**: Use `go:generate` directives in port files
 ```go
 //go:generate mockgen -destination=../../../tests/mocks/user_repository_mock.go -package=mocks meye-core/internal/domain/user Repository
 ```
 
-Run: `go generate ./...`
+**Generated Mocks** (`tests/mocks/`):
+- `*_mock.go` files for all domain ports
+- Used in use case tests
 
-## Error Handling
+**Generate Command**: `go generate ./...`
 
-**Domain Errors**: Define in domain package (e.g., validation errors)
+---
 
-**Application Errors**: Define in `internal/application/[domain]/errors.go`:
-```go
-var (
-    ErrUsernameAlreadyExists = errors.New("username already exists")
-    ErrInvalidCredentials    = errors.New("invalid credentials")
-)
-```
+## Key Design Patterns
 
-**HTTP Error Mapping**: Handlers map application/domain errors to HTTP status codes
+### 1. Hexagonal Architecture (Ports & Adapters)
 
-## Configuration
+**Ports** (Interfaces):
+- Domain ports: Repository, Service interfaces in domain layer
+- Application ports: Use case interfaces in application layer
 
-**Location**: `internal/config/`
+**Adapters** (Implementations):
+- Infrastructure implementations of domain ports
+- Handlers are adapters for HTTP (implement HTTP → use case translation)
 
-**Loading**: Environment variables via `godotenv` (development) or system env (production)
+**Dependency Direction**: Infrastructure → Application → Domain (inward only)
+
+---
+
+### 2. Aggregate Root Pattern
+
+**Aggregate**: Campaign
+- Root entity: Campaign
+- Child entities: Invitation, PJ
+- Consistency boundary: All changes go through aggregate root
+- Transactional boundary: Entire aggregate saved atomically
+
+**Rules**:
+- External references only to root (by campaign ID)
+- Children cannot be modified directly
+- Root enforces invariants (e.g., only players invited, PJ requires invitation)
+
+---
+
+### 3. Value Objects Pattern
+
+**Immutable**: Physical, Mental, Coordination, BasicStats, SpecialStats, etc.
+
+**Characteristics**:
+- No identity (defined by values)
+- Immutable (no setters)
+- Created via factory functions (`CreateXWithoutValidation`)
+- Used extensively in PJ entity for stat composition
+
+---
+
+### 4. Repository Pattern
+
+**Interface in Domain**: Defines what persistence operations are needed
+
+**Implementation in Infrastructure**: How data is persisted
+
+**Aggregate Persistence**: Repository handles entire aggregate atomically
+- Save() synchronizes domain aggregate state with database
+- FindByID() reconstructs aggregate with all children
+
+---
+
+### 5. Use Case Pattern (Interactors)
+
+**Single Responsibility**: Each use case = one business workflow
+
+**Interface**: Defined at application boundary
+- Input DTO: Simple data structure
+- Output DTO: Simple data structure
+- Execute method: Orchestrates domain objects
+
+**Dependencies**: Only domain ports (Repository, Services)
+
+---
+
+### 6. Factory Methods
+
+**Purpose**: Entity reconstruction from database
 
 **Pattern**:
 ```go
-type Config struct {
-    Database DatabaseConfig
-    JWT      JWTConfig
-    Api      ApiConfig
+// Domain entity
+func CreateUserWithoutValidation(id, username, hashedPassword string, role UserRole) *User {
+    return &User{...}
 }
 ```
 
-## Database
+**Usage**: Infrastructure layer uses factories to convert database models to domain entities
 
-**ORM**: GORM
+**Naming**: `Create[Entity]WithoutValidation` - bypasses domain validation for trusted data sources
 
-**Migrations**: Located in `migrations/`
+---
 
-**Pattern**: Separate database models from domain entities:
+### 7. Middleware Chain
+
+**Composable Middleware**:
 ```go
-// Infrastructure layer - Postgres model
-type User struct {
-    ID             string
-    Username       string
-    HashedPassword string
-    Role           string
-}
+router.Use(authHandler.AuthMiddleware())       // Step 1: Validate JWT
+router.Use(authHandler.RequireMasterRole())    // Step 2: Check role
+router.Use(authHandler.RequireCampaignMaster()) // Step 3: Check ownership
+```
 
-// Convert to domain entity
-func (u *User) ToDomainUser() *user.User {
-    return user.CreateUserWithoutValidation(...)
+**Context Passing**: Each middleware enriches Gin context
+- AuthMiddleware: sets UserID
+- Route handlers: retrieve UserID from context
+
+---
+
+## Common Patterns & Conventions
+
+### Adding a New Use Case
+
+1. **Define Input DTO** in `application/[domain]/ports.go`:
+```go
+type MyUseCaseInput struct {
+    Field1 string
+    Field2 int
 }
 ```
 
-## Go Module
+2. **Define Use Case Port** in `application/[domain]/ports.go`:
+```go
+type MyUseCase interface {
+    Execute(ctx context.Context, input MyUseCaseInput) (OutputDTO, error)
+}
+```
 
-**Module name**: `meye-core`
+3. **Implement Use Case** in `application/[domain]/myusecase/`:
+```go
+package myusecase
 
-**Go version**: Check `go.mod`
+var _ applicationdomain.MyUseCase = (*UseCase)(nil)
 
-**Key dependencies**:
-- `github.com/gin-gonic/gin` - HTTP framework
-- `gorm.io/gorm` - ORM
-- `github.com/golang-jwt/jwt` - JWT
-- `go.uber.org/mock/gomock` - Mocking for tests
+type UseCase struct {
+    // Dependencies (domain ports only)
+}
 
-## Build Commands
+func (u *UseCase) Execute(ctx context.Context, input applicationdomain.MyUseCaseInput) (applicationdomain.OutputDTO, error) {
+    // Implementation
+}
+```
+
+4. **Add to UseCases Struct** in `dependencies.go`:
+```go
+type DomainUseCases struct {
+    MyUseCase domain.MyUseCase  // Interface type
+}
+```
+
+5. **Wire in Handler**:
+```go
+type MyHandler struct {
+    myUseCase applicationdomain.MyUseCase  // Interface
+}
+```
+
+6. **Add Route** in `api.go`:
+```go
+router.POST("/my-endpoint", myHandler.MyEndpoint)
+```
+
+---
+
+### Adding a New Domain Service
+
+1. **Define Port** in `domain/[domain]/[service].port.go`:
+```go
+package domain
+
+type MyService interface {
+    DoSomething(param string) error
+}
+```
+
+2. **Implement in Infrastructure** in `infrastructure/[service]/`:
+```go
+package service
+
+type Service struct {
+    // Configuration
+}
+
+func (s *Service) DoSomething(param string) error {
+    // Implementation
+}
+```
+
+3. **Wire in Dependencies** in `dependencies.go`:
+```go
+services.MyService = service.New()
+```
+
+---
+
+### Adding a New Endpoint
+
+1. **Create Handler DTOs** in `infrastructure/api/handler/dto/`:
+```go
+type MyRequestBody struct {
+    Field string `json:"field" binding:"required"`
+}
+
+type MyResponseBody struct {
+    Result string `json:"result"`
+}
+```
+
+2. **Create Handler Method**:
+```go
+func (h *MyHandler) MyEndpoint(c *gin.Context) {
+    var req dto.MyRequestBody
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Map to use case input
+    input := application.MyUseCaseInput{...}
+
+    // Execute use case
+    output, err := h.myUseCase.Execute(c.Request.Context(), input)
+    if err != nil {
+        respondMappedError(c, err)
+        return
+    }
+
+    // Map to response DTO
+    response := dto.MyResponseBody{...}
+    c.JSON(200, response)
+}
+```
+
+3. **Add Route** in `api.go`:
+```go
+router.POST("/my-endpoint", myHandler.MyEndpoint)
+```
+
+---
+
+## Error Handling Strategy
+
+### Error Types
+
+1. **Domain Errors** (`domain/[domain]/errors.go`):
+   - Business rule violations
+   - Example: `ErrUserNotPlayer`, `ErrUserNotInvited`
+
+2. **Application Errors** (`application/[domain]/errors.go`):
+   - Use case failures
+   - Example: `ErrUsernameAlreadyExists`, `ErrInvalidCredentials`
+
+3. **Infrastructure Errors**:
+   - Technical failures (database, network)
+   - Example: GORM errors, HTTP errors
+
+### Error Propagation
+
+**Flow**: Domain → Application → Infrastructure
+
+**Handler Mapping**:
+```go
+func respondMappedError(c *gin.Context, err error) {
+    switch err {
+    case application.ErrUsernameAlreadyExists:
+        c.JSON(409, gin.H{"error": err.Error()})
+    case application.ErrInvalidCredentials:
+        c.JSON(401, gin.H{"error": err.Error()})
+    // ... more mappings
+    default:
+        c.JSON(500, gin.H{"error": "Internal server error"})
+    }
+}
+```
+
+---
+
+## Request Validation
+
+### Gin Binding Validation
+
+**Tags on DTOs**:
+```go
+type CreateUserInputBody struct {
+    Username string `json:"username" binding:"required,min=3,max=20,alphanum"`
+    Password string `json:"password" binding:"required,min=8"`
+    Role     string `json:"role" binding:"required,userrole"`
+}
+```
+
+**Standard Tags**: `required`, `min`, `max`, `alphanum`, `email`, etc.
+
+**Custom Validators** (`api/validator/validators.go`):
+```go
+// Custom validator for user role enum
+if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+    v.RegisterValidation("userrole", validateUserRole)
+}
+```
+
+**Validation Failure**: Returns 400 Bad Request with validation errors
+
+---
+
+## Build & Run Commands
 
 ```bash
 # Build all packages
 go build ./...
 
-# Run tests
+# Run server
+go run cmd/server/main.go
+
+# Run all tests
 go test ./...
 
 # Run specific test package
-go test ./internal/application/user/createuser/...
+go test ./internal/domain/campaign/...
+
+# Run tests with verbose output
+go test -v ./...
 
 # Generate mocks
 go generate ./...
 
-# Run server
-go run cmd/server/main.go
+# Run with race detector
+go test -race ./...
 ```
+
+---
+
+## Key Dependencies
+
+**Framework & Web**:
+- `github.com/gin-gonic/gin` - HTTP web framework
+- `github.com/go-playground/validator/v10` - Request validation
+
+**Database**:
+- `gorm.io/gorm` - ORM
+- `gorm.io/driver/postgres` - Postgres driver
+
+**Security**:
+- `github.com/golang-jwt/jwt/v5` - JWT authentication
+- `golang.org/x/crypto/bcrypt` - Password hashing
+
+**Testing**:
+- `github.com/stretchr/testify/assert` - Test assertions
+- `go.uber.org/mock/gomock` - Mock generation
+
+**Utilities**:
+- `github.com/google/uuid` - UUID generation
+- `github.com/joho/godotenv` - Environment variable loading
+
+---
 
 ## Key Principles
 
-1. **Dependency Inversion**: Infrastructure depends on domain/application, not the other way around
-2. **Port Interfaces**: Define at layer boundaries (domain ports, use case ports)
-3. **Input DTOs**: Live with use case ports at application boundary
-4. **No Circular Dependencies**: Input DTOs moved from child packages to parent to avoid cycles
-5. **Explicit Implementation Checks**: Use `var _ Interface = (*Concrete)(nil)` pattern
-6. **Clean Boundaries**: Handlers never import concrete use case implementations
+### Architectural Principles
+
+1. **Dependency Inversion**: Infrastructure depends on domain/application, never reverse
+2. **Separation of Concerns**: Each layer has distinct responsibility
+3. **Explicit Boundaries**: Port interfaces define layer boundaries
+4. **Immutability**: Value objects are immutable
+5. **Single Responsibility**: Each use case does one thing
+6. **Interface Segregation**: Small, focused interfaces
+
+### Code Principles
+
+1. **Compile-Time Checks**: `var _ Interface = (*Concrete)(nil)` pattern
+2. **No Circular Dependencies**: DTOs at layer boundaries to avoid cycles
+3. **Explicit Over Implicit**: Clear interfaces and dependencies
+4. **Business Logic in Domain**: Handlers and use cases orchestrate, don't implement rules
+5. **Factory Methods**: Clear construction patterns for entities
+6. **Consistent Error Handling**: Errors flow from domain → application → infrastructure
+
+---
 
 ## Common Pitfalls to Avoid
 
 ❌ **Don't** make handlers depend on concrete use case types
-✅ **Do** make handlers depend on use case port interfaces
+```go
+type Handler struct {
+    useCase *createuser.UseCase  // ❌ Concrete type
+}
+```
 
-❌ **Don't** define Input DTOs in use case subdirectories (causes circular imports)
-✅ **Do** define Input DTOs in `ports.go` at the boundary
+✅ **Do** make handlers depend on use case port interfaces
+```go
+type Handler struct {
+    useCase user.CreateUserUseCase  // ✅ Interface
+}
+```
+
+---
+
+❌ **Don't** define Input DTOs in use case subdirectories
+```go
+// createuser/input.go
+package createuser
+type Input struct {...}  // ❌ Creates circular dependency
+```
+
+✅ **Do** define Input DTOs in ports.go at the boundary
+```go
+// ports.go
+package user
+type CreateUserInput struct {...}  // ✅ At application boundary
+```
+
+---
 
 ❌ **Don't** have use cases depend on infrastructure
+```go
+type UseCase struct {
+    db *gorm.DB  // ❌ Infrastructure dependency
+}
+```
+
 ✅ **Do** have use cases depend on domain ports
+```go
+type UseCase struct {
+    repository domain.Repository  // ✅ Domain port
+}
+```
+
+---
 
 ❌ **Don't** put business logic in handlers
+```go
+func (h *Handler) CreateUser(c *gin.Context) {
+    // ❌ Validation and business rules in handler
+    if len(req.Password) < 8 {
+        return errors.New("password too short")
+    }
+}
+```
+
 ✅ **Do** put business logic in domain entities and use cases
+```go
+// Domain entity
+func NewUser(...) (*User, error) {
+    // ✅ Validation in domain
+    if len(password) < 8 {
+        return nil, ErrPasswordTooShort
+    }
+}
+```
+
+---
+
+❌ **Don't** modify aggregate children directly
+```go
+invitation := campaign.Invitations()[0]
+invitation.Accept()  // ❌ Direct modification bypasses aggregate
+```
+
+✅ **Do** modify through aggregate root
+```go
+campaign.AddPJ(userID, params)  // ✅ Goes through aggregate root
+```
+
+---
+
+## Project-Specific Features
+
+### Campaign XP System
+
+The project includes a comprehensive XP calculation system for RPG character progression:
+
+**Features**:
+- Three stat categories: Basic, Special, Supernatural
+- Talent-based cost multipliers
+- Non-linear progression formulas
+- Support for both human and supernatural characters
+
+**Implementation**: Domain logic in `calculations_*.go` files
+
+**Testing**: Extensive tests verify XP calculations for all scenarios
+
+### Character Stat System
+
+**Complexity**: PJ entity has 40+ individual stat fields organized into value objects
+
+**Flexibility**:
+- Basic stats: universal attributes (strength, agility, intelligence, etc.)
+- Special stats: advanced skills (empowerment, illusion, energy handling)
+- Supernatural stats: transformation abilities (JSONB in database)
+
+**Pattern**: Composition of value objects maintains clean domain model while supporting complex game mechanics
+
+### Aggregate Persistence with Children
+
+**Challenge**: Save aggregate root with multiple child collections (invitations, PJs)
+
+**Solution**: Transactional repository pattern with synchronization logic
+- Tracks changes in domain aggregate
+- Synchronizes database state with aggregate state
+- Handles inserts, updates, and deletes in single transaction
+
+---
 
 ## When to Create New Layers
 
-**New Domain Package**: When adding a distinct business capability (e.g., `order`, `payment`)
+**New Domain Package**: When adding a distinct business capability
+- Example: `order`, `payment`, `inventory`
+- Should have clear bounded context
 
 **New Use Case**: When adding a new business workflow
+- Example: `AcceptInvitation`, `UpdateCampaign`, `DeletePJ`
+- Each workflow gets its own use case
 
-**New Handler**: When adding a new API endpoint or middleware
+**New Handler**: When adding a new API endpoint
+- One handler per domain/resource
+- Methods correspond to endpoints
 
 **New Service Port**: When needing integration with external systems
+- Example: `EmailService`, `NotificationService`, `PaymentGateway`
+- Define port in domain, implement in infrastructure
+
+**New Repository**: When adding a new aggregate root
+- Each aggregate root gets its own repository
+- Repository manages aggregate persistence
+
+---
+
+## Project Status
+
+The project is actively developed with focus on campaign management and character progression features. Recent additions include:
+- PJ (player character) entity with complex stat system
+- XP calculation system for character progression
+- Invitation workflow for campaign management
+- Aggregate pattern implementation for campaign persistence
+
+The architecture is well-established and follows clean architecture principles with clear boundaries between layers.

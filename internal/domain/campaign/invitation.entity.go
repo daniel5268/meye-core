@@ -31,6 +31,10 @@ func (i *Invitation) CampaignID() string     { return i.campaignID }
 func (i *Invitation) UserID() string         { return i.userID }
 func (i *Invitation) State() InvitationState { return i.state }
 
+func (i *Invitation) accept() {
+	i.state = InvitationStateAccepted
+}
+
 func CreateInvitationWithoutValidation(id, campaignID, userID string, state InvitationState) *Invitation {
 	return &Invitation{
 		id:         id,
