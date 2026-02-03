@@ -25,7 +25,7 @@ func NewInviteUserUseCase(campainRepository domaincampaign.Repository, userRepos
 	}
 }
 
-func (uc *UseCase) Execute(ctx context.Context, input *applicationcampaign.InviteUserInput) (applicationcampaign.InvitationOutput, error) {
+func (uc *UseCase) Execute(ctx context.Context, input applicationcampaign.InviteUserInput) (applicationcampaign.InvitationOutput, error) {
 	cmp, err := uc.campainRepository.FindByID(ctx, input.CampaignID)
 	if err != nil {
 		return applicationcampaign.InvitationOutput{}, err

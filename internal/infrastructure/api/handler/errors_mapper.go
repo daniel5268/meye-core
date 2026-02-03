@@ -46,7 +46,7 @@ func respondMappedError(c *gin.Context, err error) {
 	case errors.Is(err, domaincampaign.ErrUserNotInvited):
 		c.JSON(http.StatusNotAcceptable, ErrorResponse{
 			Error: "User should be invited to create PJs in a campaign",
-			Code:  domainuser.ErrUserNotPlayer.Error(),
+			Code:  domaincampaign.ErrUserNotInvited.Error(),
 		})
 	default:
 		c.JSON(http.StatusInternalServerError, ErrorResponse{

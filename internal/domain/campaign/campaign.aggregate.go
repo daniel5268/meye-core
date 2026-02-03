@@ -34,6 +34,16 @@ func (c *Campaign) InviteUser(u *user.User, identificationService shared.Identif
 	return invitation, nil
 }
 
+func (c *Campaign) GetPendingUserInvitation(userID string) *Invitation {
+	for i := range c.invitations {
+		if c.invitations[i].UserID() == userID && c.invitations[i].State() == InvitationStatePending {
+			return &c.invitations[i]
+		}
+	}
+
+	return nil
+}
+
 func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificationService shared.IdentificationService) (*PJ, error) {
 	inv := c.GetPendingUserInvitation(userID)
 	if inv == nil {
@@ -45,7 +55,7 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 		supernaturalStats = &SupernaturalStats{
 			skills: []Skill{
 				{
-					transformations: []uint{},
+					transformations: []uint{0},
 				},
 			},
 		}

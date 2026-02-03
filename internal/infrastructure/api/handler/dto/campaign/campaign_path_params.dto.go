@@ -1,5 +1,5 @@
 package campaign
 
-type InviteUserPathParams struct {
+type CampaignPathParams struct {
 	CampaignID string `uri:"campaignID" binding:"required"`
 }

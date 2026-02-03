@@ -289,13 +289,3 @@ type PJCreateParameters struct {
 	BasicTalent   BasicTalentType
 	SpecialTalent SpecialTalentType
 }
-
-func (c *Campaign) GetPendingUserInvitation(userID string) *Invitation {
-	for i := range c.invitations {
-		if c.invitations[i].UserID() == userID && c.invitations[i].State() == InvitationStatePending {
-			return &c.invitations[i]
-		}
-	}
-
-	return nil
-}

@@ -6,6 +6,7 @@ import (
 
 	"meye-core/internal/application/campaign"
 	"meye-core/internal/application/campaign/createcampaign"
+	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/inviteuser"
 	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
@@ -33,6 +34,7 @@ type UserUseCases struct {
 type CampaignUseCases struct {
 	CreateCampaign campaign.CreateCampaignUseCase
 	InviteUser     campaign.InviteUserUseCase
+	CreatePJ       campaign.CreatePJUseCase
 }
 
 type UseCases struct {
@@ -164,6 +166,11 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Repositories.User,
 				c.Services.Identification,
 			),
+			CreatePJ: createpj.NewCreatePJUseCase(
+				c.Repositories.Campaign,
+				c.Repositories.User,
+				c.Services.Identification,
+			),
 		},
 	}
 }
@@ -172,7 +179,7 @@ func (c *DependencyContainer) initializeHandlers() {
 	c.Handlers = &Handlers{
 		User:     handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
 		Auth:     handler.NewAuthHandler(c.Config.Api.ApiKey, *c.Services.JWT, c.Repositories.User, c.Repositories.Campaign),
-		Campaign: handler.NewCampaignHandler(c.UseCases.Campaign.CreateCampaign, c.UseCases.Campaign.InviteUser),
+		Campaign: handler.NewCampaignHandler(c.UseCases.Campaign.CreateCampaign, c.UseCases.Campaign.InviteUser, c.UseCases.Campaign.CreatePJ),
 	}
 }
 
