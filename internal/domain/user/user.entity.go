@@ -38,6 +38,10 @@ func (u *User) Username() string       { return u.username }
 func (u *User) Role() UserRole         { return u.role }
 func (u *User) HashedPassword() string { return u.hashedPassword }
 
+func (u *User) IsPlayer() bool {
+	return u.role == UserRolePlayer
+}
+
 func CreateUserWithoutValidation(id, username, password string, role UserRole) *User {
 	return &User{
 		id:             id,
