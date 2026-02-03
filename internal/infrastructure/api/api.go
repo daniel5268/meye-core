@@ -77,6 +77,11 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequireMasterRole(),
 			r.handlers.CampaignHandler.CreateCampaign,
 		)
+		campaigns.POST("/:campaignID/invitations",
+			r.handlers.AuthHandler.AuthMiddleware(),
+			r.handlers.AuthHandler.RequireCampaignMaster(),
+			r.handlers.CampaignHandler.InviteUser,
+		)
 	}
 }
 

@@ -2,6 +2,17 @@ package user
 
 import "meye-core/internal/domain/user"
 
+type CreateUserInput struct {
+	Username string
+	Password string
+	Role     user.UserRole
+}
+
+type LoginInput struct {
+	Username string
+	Password string
+}
+
 type UserOutput struct {
 	ID       string
 	Username string

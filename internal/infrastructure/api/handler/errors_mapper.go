@@ -2,7 +2,9 @@ package handler
 
 import (
 	"errors"
+	applicationcampaign "meye-core/internal/application/campaign"
 	applicationuser "meye-core/internal/application/user"
+	domainuser "meye-core/internal/domain/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +26,21 @@ func respondMappedError(c *gin.Context, err error) {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Error: "Invalid credentials",
 			Code:  applicationuser.ErrInvalidCredentials.Error(),
+		})
+	case errors.Is(err, applicationuser.ErrUserNotFound):
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: "User not found",
+			Code:  applicationuser.ErrUserNotFound.Error(),
+		})
+	case errors.Is(err, applicationcampaign.ErrCampaignNotFound):
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: "Campaign not found",
+			Code:  applicationcampaign.ErrCampaignNotFound.Error(),
+		})
+	case errors.Is(err, domainuser.ErrUserNotPlayer):
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "User is not a player",
+			Code:  domainuser.ErrUserNotPlayer.Error(),
 		})
 	default:
 		c.JSON(http.StatusInternalServerError, ErrorResponse{

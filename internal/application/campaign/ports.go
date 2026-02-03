@@ -1,12 +1,13 @@
 package campaign
 
-import "context"
-
-type CreateCampaignInput struct {
-	Name     string
-	MasterID string
-}
+import (
+	"context"
+)
 
 type CreateCampaignUseCase interface {
 	Execute(ctx context.Context, input *CreateCampaignInput) (CampaignOutput, error)
+}
+
+type InviteUserUseCase interface {
+	Execute(ctx context.Context, input *InviteUserInput) (InvitationOutput, error)
 }

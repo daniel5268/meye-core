@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"meye-core/internal/domain/campaign"
 	"meye-core/internal/domain/user"
 	"meye-core/internal/infrastructure/jwt"
 	"net/http"
@@ -11,18 +12,28 @@ import (
 )
 
 type AuthHandler struct {
-	apiKey         string
-	jwtService     jwt.Service
-	userRepository user.Repository
+	apiKey             string
+	jwtService         jwt.Service
+	userRepository     user.Repository
+	campaignRepository campaign.Repository
 }
+
+type responseError struct {
+	Error string `json:"error"`
+	Code  string `json:"code,omitempty"`
+}
+
+var unauthorizedError = responseError{Error: "Unauthorized"}
+var forbiddenError = responseError{Error: "Forbidden"}
 
 const AuthKey = "auth"
 
-func NewAuthHandler(apiKey string, jwtService jwt.Service, userRepo user.Repository) *AuthHandler {
+func NewAuthHandler(apiKey string, jwtService jwt.Service, userRepo user.Repository, campaignRepo campaign.Repository) *AuthHandler {
 	return &AuthHandler{
-		apiKey:         apiKey,
-		jwtService:     jwtService,
-		userRepository: userRepo,
+		apiKey:             apiKey,
+		jwtService:         jwtService,
+		userRepository:     userRepo,
+		campaignRepository: campaignRepo,
 	}
 }
 
@@ -31,7 +42,7 @@ func (h *AuthHandler) InternalAPIKeyMiddleware() gin.HandlerFunc {
 		apiKey := c.GetHeader("Api-Key")
 
 		if apiKey != h.apiKey {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.JSON(http.StatusUnauthorized, unauthorizedError)
 			c.Abort()
 			return
 		}
@@ -49,20 +60,20 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
 		tokenString := parts[1]
 		userID, err := h.jwtService.ValidateToken(tokenString)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization failed"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
@@ -83,25 +94,25 @@ func (h *AuthHandler) RequireRole(allowedRoles ...user.UserRole) gin.HandlerFunc
 		// Get auth context set by AuthMiddleware
 		authValue, exists := c.Get(AuthKey)
 		if !exists {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
 		auth, ok := authValue.(AuthContext)
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Invalid authentication context"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
 		// Fetch user from repository
 		usr, err := h.userRepository.FindByID(c.Request.Context(), auth.UserID)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
 		if usr == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
 			return
 		}
 
@@ -113,7 +124,7 @@ func (h *AuthHandler) RequireRole(allowedRoles ...user.UserRole) gin.HandlerFunc
 		}
 
 		// User doesn't have any of the required roles
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: insufficient permissions"})
+		c.AbortWithStatusJSON(http.StatusForbidden, forbiddenError)
 	}
 }
 
@@ -130,4 +141,51 @@ func (h *AuthHandler) RequireAdminRole() gin.HandlerFunc {
 // RequirePlayerRole is a convenience middleware that checks if the authenticated user has the player role.
 func (h *AuthHandler) RequirePlayerRole() gin.HandlerFunc {
 	return h.RequireRole(user.UserRolePlayer)
+}
+
+// RequireCampaignMaster is a middleware that checks if the authenticated user is the master of the campaign.
+// This middleware should be used after AuthMiddleware, as it depends on the AuthContext being set.
+// It expects a campaignID parameter in the URI path.
+func (h *AuthHandler) RequireCampaignMaster() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get auth context set by AuthMiddleware
+		authValue, exists := c.Get(AuthKey)
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+			return
+		}
+
+		auth, ok := authValue.(AuthContext)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+			return
+		}
+
+		// Get campaign ID from URI parameter
+		campaignID := c.Param("campaignID")
+		if campaignID == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseError{Error: "campaignID parameter is required", Code: "MISSING_CAMPAIGN_ID"})
+			return
+		}
+
+		// Fetch campaign from repository
+		cmp, err := h.campaignRepository.FindByID(c.Request.Context(), campaignID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseError{Error: "Failed to retrieve campaign", Code: "FAILED_TO_RETRIEVE_CAMPAIGN"})
+			return
+		}
+
+		if cmp == nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, responseError{Error: "Campaign not found", Code: "CAMPAIGN_NOT_FOUND"})
+			return
+		}
+
+		// Check if authenticated user is the campaign master
+		if cmp.MasterID() != auth.UserID {
+			c.AbortWithStatusJSON(http.StatusForbidden, forbiddenError)
+			return
+		}
+
+		c.Next()
+	}
 }
