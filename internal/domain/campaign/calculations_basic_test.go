@@ -11,39 +11,34 @@ import (
 func TestBasicStats_GetRequiredXP(t *testing.T) {
 	tests := []struct {
 		name       string
-		talent     campaign.BasicTalentType
 		basicStats campaign.BasicStats
 		want       int
 	}{
 		{
-			name:       "Works correclty with physical talent",
-			talent:     campaign.BasicTalentPhysical,
-			basicStats: testdata.BasicStats(),
+			name:       "Works correctly with physical talent",
+			basicStats: testdata.BasicStatsWithPhysicalTalent(),
 			want:       1176,
 		},
 		{
-			name:       "Works correclty with mental talent",
-			talent:     campaign.BasicTalentMental,
-			basicStats: testdata.BasicStats(),
+			name:       "Works correctly with mental talent",
+			basicStats: testdata.BasicStatsWithMentalTalent(),
 			want:       1096,
 		},
 		{
-			name:       "Works correclty with coordination talent",
-			talent:     campaign.BasicTalentCoordination,
-			basicStats: testdata.BasicStats(),
+			name:       "Works correctly with coordination talent",
+			basicStats: testdata.BasicStatsWithCoordinationTalent(),
 			want:       1016,
 		},
 		{
-			name:       "Works correclty with energy talent",
-			talent:     campaign.BasicTalentEnergy,
-			basicStats: testdata.BasicStats(),
+			name:       "Works correctly with no talents",
+			basicStats: testdata.BasicStatsWithNoTalents(),
 			want:       1280,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := test.basicStats.GetRequiredXP(test.talent)
+			got := test.basicStats.GetRequiredXP()
 
 			assert.Equal(t, test.want, got)
 		})

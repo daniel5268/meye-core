@@ -1,14 +1,5 @@
 package campaign
 
-type BasicTalentType string
-
-const (
-	BasicTalentPhysical     BasicTalentType = "physical"
-	BasicTalentMental       BasicTalentType = "mental"
-	BasicTalentCoordination BasicTalentType = "coordination"
-	BasicTalentEnergy       BasicTalentType = "energy"
-)
-
 type PJType string
 
 const (
@@ -16,32 +7,27 @@ const (
 	PJTypeSupernatural PJType = "supernatural"
 )
 
-type SpecialTalentType string
-
-const (
-	SpecialTalentPhysical SpecialTalentType = "physical"
-	SpecialTalentMental   SpecialTalentType = "mental"
-	SpecialTalentEnergy   SpecialTalentType = "energy"
-)
-
 type Physical struct {
 	strength   uint
 	agility    uint
 	speed      uint
 	resistance uint
+	isTalented bool
 }
 
 func (p Physical) Strength() uint   { return p.strength }
 func (p Physical) Agility() uint    { return p.agility }
 func (p Physical) Speed() uint      { return p.speed }
 func (p Physical) Resistance() uint { return p.resistance }
+func (p Physical) IsTalented() bool { return p.isTalented }
 
-func CreatePhysicalWithoutValidation(strength, agility, speed, resistance uint) Physical {
+func CreatePhysicalWithoutValidation(strength, agility, speed, resistance uint, isTalented bool) Physical {
 	return Physical{
 		strength:   strength,
 		agility:    agility,
 		speed:      speed,
 		resistance: resistance,
+		isTalented: isTalented,
 	}
 }
 
@@ -50,19 +36,22 @@ type Mental struct {
 	wisdom        uint
 	concentration uint
 	will          uint
+	isTalented    bool
 }
 
 func (m Mental) Inteligence() uint   { return m.inteligence }
 func (m Mental) Wisdom() uint        { return m.wisdom }
 func (m Mental) Concentration() uint { return m.concentration }
 func (m Mental) Will() uint          { return m.will }
+func (m Mental) IsTalented() bool    { return m.isTalented }
 
-func CreateMentalWithoutValidation(inteligence, wisdom, concentration, will uint) Mental {
+func CreateMentalWithoutValidation(inteligence, wisdom, concentration, will uint, isTalented bool) Mental {
 	return Mental{
 		inteligence:   inteligence,
 		wisdom:        wisdom,
 		concentration: concentration,
 		will:          will,
+		isTalented:    isTalented,
 	}
 }
 
@@ -71,19 +60,22 @@ type Coordination struct {
 	calculation uint
 	coordRange  uint
 	reflexes    uint
+	isTalented  bool
 }
 
 func (c Coordination) Precision() uint   { return c.precision }
 func (c Coordination) Calculation() uint { return c.calculation }
 func (c Coordination) Range() uint       { return c.coordRange }
 func (c Coordination) Reflexes() uint    { return c.reflexes }
+func (c Coordination) IsTalented() bool  { return c.isTalented }
 
-func CreateCoordinationWithoutValidation(precision, calculation, coordRange, reflexes uint) Coordination {
+func CreateCoordinationWithoutValidation(precision, calculation, coordRange, reflexes uint, isTalented bool) Coordination {
 	return Coordination{
 		precision:   precision,
 		calculation: calculation,
 		coordRange:  coordRange,
 		reflexes:    reflexes,
+		isTalented:  isTalented,
 	}
 }
 
@@ -111,66 +103,78 @@ func CreateBasicStatsWithoutValidation(physical Physical, mental Mental, coordin
 type PhysicalSkills struct {
 	empowerment  uint
 	vitalControl uint
+	isTalented   bool
 }
 
 func (ps PhysicalSkills) Empowerment() uint  { return ps.empowerment }
 func (ps PhysicalSkills) VitalControl() uint { return ps.vitalControl }
+func (ps PhysicalSkills) IsTalented() bool   { return ps.isTalented }
 
-func CreatePhysicalSkillsWithoutValidation(empowerment, vitalControl uint) PhysicalSkills {
+func CreatePhysicalSkillsWithoutValidation(empowerment, vitalControl uint, isTalented bool) PhysicalSkills {
 	return PhysicalSkills{
 		empowerment:  empowerment,
 		vitalControl: vitalControl,
+		isTalented:   isTalented,
 	}
 }
 
 type MentalSkills struct {
 	ilusion       uint
 	mentalControl uint
+	isTalented    bool
 }
 
 func (ms MentalSkills) Ilusion() uint       { return ms.ilusion }
 func (ms MentalSkills) MentalControl() uint { return ms.mentalControl }
+func (ms MentalSkills) IsTalented() bool    { return ms.isTalented }
 
-func CreateMentalSkillsWithoutValidation(ilusion, mentalControl uint) MentalSkills {
+func CreateMentalSkillsWithoutValidation(ilusion, mentalControl uint, isTalented bool) MentalSkills {
 	return MentalSkills{
 		ilusion:       ilusion,
 		mentalControl: mentalControl,
+		isTalented:    isTalented,
 	}
 }
 
 type EnergySkills struct {
 	objectHandling uint
 	energyHandling uint
+	isTalented     bool
 }
 
 func (es EnergySkills) ObjectHandling() uint { return es.objectHandling }
 func (es EnergySkills) EnergyHandling() uint { return es.energyHandling }
+func (es EnergySkills) IsTalented() bool     { return es.isTalented }
 
-func CreateEnergySkillsWithoutValidation(objectHandling, energyHandling uint) EnergySkills {
+func CreateEnergySkillsWithoutValidation(objectHandling, energyHandling uint, isTalented bool) EnergySkills {
 	return EnergySkills{
 		objectHandling: objectHandling,
 		energyHandling: energyHandling,
+		isTalented:     isTalented,
 	}
 }
 
 type SpecialStats struct {
-	physical   PhysicalSkills
-	mental     MentalSkills
-	energy     EnergySkills
-	energyTank uint
+	physical        PhysicalSkills
+	mental          MentalSkills
+	energy          EnergySkills
+	energyTank      uint
+	isEnergyTalented bool
 }
 
 func (ss SpecialStats) Physical() PhysicalSkills { return ss.physical }
 func (ss SpecialStats) Mental() MentalSkills     { return ss.mental }
 func (ss SpecialStats) Energy() EnergySkills     { return ss.energy }
 func (ss SpecialStats) EnergyTank() uint         { return ss.energyTank }
+func (ss SpecialStats) IsEnergyTalented() bool   { return ss.isEnergyTalented }
 
-func CreateSpecialStatsWithoutValidation(physical PhysicalSkills, mental MentalSkills, energy EnergySkills, energyTank uint) SpecialStats {
+func CreateSpecialStatsWithoutValidation(physical PhysicalSkills, mental MentalSkills, energy EnergySkills, energyTank uint, isEnergyTalented bool) SpecialStats {
 	return SpecialStats{
-		physical:   physical,
-		mental:     mental,
-		energy:     energy,
-		energyTank: energyTank,
+		physical:         physical,
+		mental:           mental,
+		energy:           energy,
+		energyTank:       energyTank,
+		isEnergyTalented: isEnergyTalented,
 	}
 }
 
@@ -210,8 +214,6 @@ type PJ struct {
 	villainy          uint
 	heroism           uint
 	pjType            PJType
-	basicTalent       BasicTalentType
-	specialTalent     SpecialTalentType
 	basicStats        BasicStats
 	specialStats      SpecialStats
 	supernaturalStats *SupernaturalStats
@@ -229,8 +231,6 @@ func (p *PJ) Charisma() int                         { return p.charisma }
 func (p *PJ) Villainy() uint                        { return p.villainy }
 func (p *PJ) Heroism() uint                         { return p.heroism }
 func (p *PJ) Type() PJType                          { return p.pjType }
-func (p *PJ) BasicTalent() BasicTalentType          { return p.basicTalent }
-func (p *PJ) SpecialTalent() SpecialTalentType      { return p.specialTalent }
 func (p *PJ) BasicStats() BasicStats                { return p.basicStats }
 func (p *PJ) SpecialStats() SpecialStats            { return p.specialStats }
 func (p *PJ) SupernaturalStats() *SupernaturalStats { return p.supernaturalStats }
@@ -250,8 +250,6 @@ func CreatePJWithoutValidation(
 	villainy uint,
 	heroism uint,
 	pjType PJType,
-	basicTalent BasicTalentType,
-	specialTalent SpecialTalentType,
 	basicStats BasicStats,
 	specialStats SpecialStats,
 	supernaturalStats *SupernaturalStats,
@@ -268,24 +266,8 @@ func CreatePJWithoutValidation(
 		villainy:          villainy,
 		heroism:           heroism,
 		pjType:            pjType,
-		basicTalent:       basicTalent,
-		specialTalent:     specialTalent,
 		basicStats:        basicStats,
 		specialStats:      specialStats,
 		supernaturalStats: supernaturalStats,
 	}
-}
-
-type PJCreateParameters struct {
-	Name          string
-	Weight        uint
-	Height        uint
-	Age           uint
-	Look          uint
-	Charisma      int
-	Villainy      uint
-	Heroism       uint
-	PjType        PJType
-	BasicTalent   BasicTalentType
-	SpecialTalent SpecialTalentType
 }
