@@ -21,28 +21,7 @@ func validatePJTypeEnum(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validateBasicTalentEnum(fl validator.FieldLevel) bool {
-	if val, ok := fl.Field().Interface().(campaign.BasicTalentType); ok {
-		return val == campaign.BasicTalentCoordination ||
-			val == campaign.BasicTalentEnergy ||
-			val == campaign.BasicTalentMental ||
-			val == campaign.BasicTalentPhysical
-	}
-	return false
-}
-
-func validateSpecialTalent(fl validator.FieldLevel) bool {
-	if val, ok := fl.Field().Interface().(campaign.SpecialTalentType); ok {
-		return val == campaign.SpecialTalentEnergy ||
-			val == campaign.SpecialTalentMental ||
-			val == campaign.SpecialTalentPhysical
-	}
-	return false
-}
-
 func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("userrole", validateUserRoleEnum)
 	v.RegisterValidation("pjtype", validatePJTypeEnum)
-	v.RegisterValidation("basictalent", validateBasicTalentEnum)
-	v.RegisterValidation("specialtalent", validateSpecialTalent)
 }

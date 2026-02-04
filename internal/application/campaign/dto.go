@@ -48,17 +48,22 @@ type UserCampaignIDs struct {
 }
 
 type CreatePJInfo struct {
-	Name          string
-	Weight        uint
-	Height        uint
-	Age           uint
-	Look          uint
-	Charisma      int
-	Villainy      uint
-	Heroism       uint
-	PjType        campaign.PJType
-	BasicTalent   campaign.BasicTalentType
-	SpecialTalent campaign.SpecialTalentType
+	Name                     string
+	Weight                   uint
+	Height                   uint
+	Age                      uint
+	Look                     uint
+	Charisma                 int
+	Villainy                 uint
+	Heroism                  uint
+	PjType                   campaign.PJType
+	IsPhysicalTalented       bool
+	IsMentalTalented         bool
+	IsCoordinationTalented   bool
+	IsPhysicalSkillsTalented bool
+	IsMentalSkillsTalented   bool
+	IsEnergySkillsTalented   bool
+	IsEnergyTalented         bool
 }
 
 type CreatePJInput struct {
@@ -71,6 +76,7 @@ type Physical struct {
 	Agility    uint
 	Speed      uint
 	Resistance uint
+	IsTalented bool
 }
 
 type Coordination struct {
@@ -78,6 +84,7 @@ type Coordination struct {
 	Calculation uint
 	Range       uint
 	Reflexes    uint
+	IsTalented  bool
 }
 
 type Mental struct {
@@ -85,6 +92,7 @@ type Mental struct {
 	Wisdom        uint
 	Concentration uint
 	Will          uint
+	IsTalented    bool
 }
 
 type BasicStats struct {
@@ -97,23 +105,27 @@ type BasicStats struct {
 type PhysicalSkills struct {
 	Empowerment  uint
 	VitalControl uint
+	IsTalented   bool
 }
 
 type MentalSkills struct {
 	Ilusion       uint
 	MentalControl uint
+	IsTalented    bool
 }
 
 type EnergySkills struct {
 	ObjectHandling uint
 	EnergyHandling uint
+	IsTalented     bool
 }
 
 type SpecialStats struct {
-	Physical   PhysicalSkills
-	Mental     MentalSkills
-	Energy     EnergySkills
-	EnergyTank uint
+	Physical         PhysicalSkills
+	Mental           MentalSkills
+	Energy           EnergySkills
+	EnergyTank       uint
+	IsEnergyTalented bool
 }
 type Skill struct {
 	Transformations []uint
@@ -135,8 +147,6 @@ type PJOutput struct {
 	Villainy          uint
 	Heroism           uint
 	PJType            string
-	BasicTalent       string
-	SpecialTalent     string
 	BasicStats        BasicStats
 	SpecialStats      SpecialStats
 	SupernaturalStats *SupernaturalStats
@@ -144,37 +154,38 @@ type PJOutput struct {
 
 func MapPJOutput(pj *campaign.PJ) PJOutput {
 	output := PJOutput{
-		ID:            pj.ID(),
-		UserID:        pj.UserID(),
-		Name:          pj.Name(),
-		Weight:        pj.Weight(),
-		Height:        pj.Height(),
-		Age:           pj.Age(),
-		Look:          pj.Look(),
-		Charisma:      pj.Charisma(),
-		Villainy:      pj.Villainy(),
-		Heroism:       pj.Heroism(),
-		PJType:        string(pj.Type()),
-		BasicTalent:   string(pj.BasicTalent()),
-		SpecialTalent: string(pj.SpecialTalent()),
+		ID:       pj.ID(),
+		UserID:   pj.UserID(),
+		Name:     pj.Name(),
+		Weight:   pj.Weight(),
+		Height:   pj.Height(),
+		Age:      pj.Age(),
+		Look:     pj.Look(),
+		Charisma: pj.Charisma(),
+		Villainy: pj.Villainy(),
+		Heroism:  pj.Heroism(),
+		PJType:   string(pj.Type()),
 		BasicStats: BasicStats{
 			Physical: Physical{
 				Strength:   pj.BasicStats().Physical().Strength(),
 				Agility:    pj.BasicStats().Physical().Agility(),
 				Speed:      pj.BasicStats().Physical().Speed(),
 				Resistance: pj.BasicStats().Physical().Resistance(),
+				IsTalented: pj.BasicStats().Physical().IsTalented(),
 			},
 			Mental: Mental{
 				Inteligence:   pj.BasicStats().Mental().Inteligence(),
 				Wisdom:        pj.BasicStats().Mental().Wisdom(),
 				Concentration: pj.BasicStats().Mental().Concentration(),
 				Will:          pj.BasicStats().Mental().Will(),
+				IsTalented:    pj.BasicStats().Mental().IsTalented(),
 			},
 			Coordination: Coordination{
 				Precision:   pj.BasicStats().Coordination().Precision(),
 				Calculation: pj.BasicStats().Coordination().Calculation(),
 				Range:       pj.BasicStats().Coordination().Range(),
 				Reflexes:    pj.BasicStats().Coordination().Reflexes(),
+				IsTalented:  pj.BasicStats().Coordination().IsTalented(),
 			},
 			Life: pj.BasicStats().Life(),
 		},
@@ -182,16 +193,20 @@ func MapPJOutput(pj *campaign.PJ) PJOutput {
 			Physical: PhysicalSkills{
 				Empowerment:  pj.SpecialStats().Physical().Empowerment(),
 				VitalControl: pj.SpecialStats().Physical().VitalControl(),
+				IsTalented:   pj.SpecialStats().Physical().IsTalented(),
 			},
 			Mental: MentalSkills{
 				Ilusion:       pj.SpecialStats().Mental().Ilusion(),
 				MentalControl: pj.SpecialStats().Mental().MentalControl(),
+				IsTalented:    pj.SpecialStats().Mental().IsTalented(),
 			},
 			Energy: EnergySkills{
 				ObjectHandling: pj.SpecialStats().Energy().ObjectHandling(),
 				EnergyHandling: pj.SpecialStats().Energy().EnergyHandling(),
+				IsTalented:     pj.SpecialStats().Energy().IsTalented(),
 			},
-			EnergyTank: pj.SpecialStats().EnergyTank(),
+			EnergyTank:       pj.SpecialStats().EnergyTank(),
+			IsEnergyTalented: pj.SpecialStats().IsEnergyTalented(),
 		},
 	}
 

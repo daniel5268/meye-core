@@ -44,6 +44,25 @@ func (c *Campaign) GetPendingUserInvitation(userID string) *Invitation {
 	return nil
 }
 
+type PJCreateParameters struct {
+	Name                     string
+	Weight                   uint
+	Height                   uint
+	Age                      uint
+	Look                     uint
+	Charisma                 int
+	Villainy                 uint
+	Heroism                  uint
+	PjType                   PJType
+	IsPhysicalTalented       bool
+	IsMentalTalented         bool
+	IsCoordinationTalented   bool
+	IsPhysicalSkillsTalented bool
+	IsMentalSkillsTalented   bool
+	IsEnergySkillsTalented   bool
+	IsEnergyTalented         bool
+}
+
 func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificationService shared.IdentificationService) (*PJ, error) {
 	inv := c.GetPendingUserInvitation(userID)
 	if inv == nil {
@@ -63,6 +82,59 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 
 	inv.accept()
 
+	// Create basic stats with talent information
+	physical := Physical{
+		strength:   0,
+		agility:    0,
+		speed:      0,
+		resistance: 0,
+		isTalented: params.IsPhysicalTalented,
+	}
+	mental := Mental{
+		inteligence:   0,
+		wisdom:        0,
+		concentration: 0,
+		will:          0,
+		isTalented:    params.IsMentalTalented,
+	}
+	coordination := Coordination{
+		precision:   0,
+		calculation: 0,
+		coordRange:  0,
+		reflexes:    0,
+		isTalented:  params.IsCoordinationTalented,
+	}
+	basicStats := BasicStats{
+		physical:     physical,
+		mental:       mental,
+		coordination: coordination,
+		life:         0,
+	}
+
+	// Create special stats with talent information
+	physicalSkills := PhysicalSkills{
+		empowerment:  0,
+		vitalControl: 0,
+		isTalented:   params.IsPhysicalSkillsTalented,
+	}
+	mentalSkills := MentalSkills{
+		ilusion:       0,
+		mentalControl: 0,
+		isTalented:    params.IsMentalSkillsTalented,
+	}
+	energySkills := EnergySkills{
+		objectHandling: 0,
+		energyHandling: 0,
+		isTalented:     params.IsEnergySkillsTalented,
+	}
+	specialStats := SpecialStats{
+		physical:         physicalSkills,
+		mental:           mentalSkills,
+		energy:           energySkills,
+		energyTank:       0,
+		isEnergyTalented: params.IsEnergyTalented,
+	}
+
 	pj := &PJ{
 		id:                identificationService.GenerateID(),
 		userID:            userID,
@@ -75,8 +147,8 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 		villainy:          params.Villainy,
 		heroism:           params.Heroism,
 		pjType:            params.PjType,
-		basicTalent:       params.BasicTalent,
-		specialTalent:     params.SpecialTalent,
+		basicStats:        basicStats,
+		specialStats:      specialStats,
 		supernaturalStats: supernaturalStats,
 	}
 

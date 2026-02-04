@@ -114,7 +114,9 @@ meye-core/
 │   ├── 002_create_campaign_invitations_table.up.sql
 │   ├── 002_create_campaign_invitations_table.down.sql
 │   ├── 003_create_pjs_table.up.sql
-│   └── 003_create_pjs_table.down.sql
+│   ├── 003_create_pjs_table.down.sql
+│   ├── 004_update_pjs_talents_system.up.sql
+│   └── 004_update_pjs_talents_system.down.sql
 │
 ├── .env.example                       # Environment variables template
 ├── go.mod
@@ -178,31 +180,34 @@ The most complex entity in the system, representing a player character with deta
 - `id`, `userID`, `name`
 - Physical attributes: `weight`, `height`, `age`, `look`
 - Character traits: `charisma`, `villainy`, `heroism`
-- Type & talents: `pjType`, `basicTalent`, `specialTalent`
+- Type: `pjType`
 - Stats: `basicStats`, `specialStats`, `supernaturalStats`
 
 **Enums**:
 - `PJType`: `human`, `supernatural`
-- `BasicTalentType`: `physical`, `mental`, `coordination`, `energy`
-- `SpecialTalentType`: `physical`, `mental`, `energy`
 
-**Value Objects** (Immutable stat structures):
+**Value Objects** (Immutable stat structures with talent flags):
 
 1. **Basic Stats** (for all PJs):
-   - `Physical`: strength, agility, speed, resistance
-   - `Mental`: intelligence, wisdom, concentration, will
-   - `Coordination`: precision, calculation, range, reflexes
+   - `Physical`: strength, agility, speed, resistance, **isTalented**
+   - `Mental`: intelligence, wisdom, concentration, will, **isTalented**
+   - `Coordination`: precision, calculation, range, reflexes, **isTalented**
    - `BasicStats`: physical, mental, coordination, life
 
 2. **Special Stats** (for all PJs):
-   - `PhysicalSkills`: empowerment, vitalControl
-   - `MentalSkills`: illusion, mentalControl
-   - `EnergySkills`: objectHandling, energyHandling
+   - `PhysicalSkills`: empowerment, vitalControl, **isTalented**
+   - `MentalSkills`: illusion, mentalControl, **isTalented**
+   - `EnergySkills`: objectHandling, energyHandling, **isTalented**
    - `SpecialStats`: physical, mental, energy, energyTank
 
 3. **Supernatural Stats** (only for supernatural PJs):
    - `Skill`: transformations[] (array of uint)
    - `SupernaturalStats`: skills[] (nullable)
+
+**Talent System**:
+- Each stat group has an `isTalented` boolean flag
+- Multiple talents can be selected (e.g., physical + mental + energy skills)
+- Talents reduce XP costs for that specific stat category
 
 ---
 
@@ -223,23 +228,24 @@ The campaign domain includes a sophisticated XP (experience points) calculation 
    - Special stats: level step = 100 (slower progression)
    - Supernatural stats: level step = 100
 
-2. **Talent Multipliers**: Cost varies based on character talent
-   - Basic stats:
-     - Talented stat: 1x cost
-     - Non-talented stat: 3x cost
-   - Special stats:
-     - Talented stat: 1x cost
-     - Non-talented stat: 2x cost
+2. **Talent Multipliers**: Cost varies based on stat group's `isTalented` flag
+   - Basic stats (Physical, Mental, Coordination):
+     - isTalented = true: 1x cost (cheaper)
+     - isTalented = false: 3x cost (expensive)
+   - Special stats (PhysicalSkills, MentalSkills, EnergySkills):
+     - isTalented = true: 1x cost (cheaper)
+     - isTalented = false: 2x cost (expensive)
    - Energy tank:
-     - Energy talent: 50% cost reduction
+     - Basic Coordination isTalented = true: 50% cost reduction
+     - Otherwise: Standard cost
 
 3. **XP Formula**: `XP = completeLevels * (completeLevels + firstLevelCost * 2 - 1) / 2 * levelStep + partialPoints * firstLevelCost`
    - Calculates total XP based on stat points
-   - Different costs for first level based on talents
+   - Different costs for first level based on isTalented flags
 
 **Methods**:
-- `BasicStats.GetRequiredXP(basicTalent) -> int`
-- `SpecialStats.GetRequiredXP(basicTalent, specialTalent) -> int`
+- `BasicStats.GetRequiredXP() -> int` - uses isTalented from each stat group
+- `SpecialStats.GetRequiredXP(isEnergyTalented bool) -> int` - uses isTalented from skill groups + energy talent flag
 - `SupernaturalStats.GetRequiredXP() -> int`
 
 **Use Case**: These calculations determine character progression costs and enable balanced character development in the RPG system.
@@ -492,8 +498,9 @@ type User struct {
 3. `CampaignPJ`: id, campaign_id, user_id, [40+ stat columns], supernatural_stats (JSONB), timestamps
 
 **Complex Model: CampaignPJ**
-- Uses domain types directly: `campaign.PJType`, `campaign.BasicTalentType`, `campaign.SpecialTalentType`
+- Uses domain types directly: `campaign.PJType`
 - All stat fields stored as separate columns for querying
+- Talent flags stored as 6 boolean columns: `is_physical_talented`, `is_mental_talented`, `is_coordination_talented`, `is_physical_skills_talented`, `is_mental_skills_talented`, `is_energy_skills_talented`
 - Supernatural stats stored as JSONB (nullable for human PJs)
 - Custom GORM type `SupernaturalStatsJSON` implements `driver.Valuer` and `sql.Scanner`
 
@@ -588,10 +595,10 @@ type Config struct {
    - Enum: invitation_state (pending, accepted)
 
 4. **pjs**
-   - Columns: id (PK), campaign_id (FK), user_id (FK), character info (name, weight, height, age, look, charisma, villainy, heroism), type/talent fields, 30+ stat columns, supernatural_stats (JSONB), timestamps
+   - Columns: id (PK), campaign_id (FK), user_id (FK), character info (name, weight, height, age, look, charisma, villainy, heroism), pj_type, 30+ stat columns, 6 talent boolean columns (is_physical_talented, is_mental_talented, is_coordination_talented, is_physical_skills_talented, is_mental_skills_talented, is_energy_skills_talented), supernatural_stats (JSONB), timestamps
    - Foreign keys: campaign_id → campaigns(id) CASCADE, user_id → users(id) CASCADE
    - Indexes: campaign_id, user_id, pj_type
-   - Enums: pj_type, basic_talent_type, special_talent_type
+   - Enums: pj_type
 
 ---
 
@@ -1147,8 +1154,26 @@ The project includes a comprehensive XP calculation system for RPG character pro
 - Basic stats: universal attributes (strength, agility, intelligence, etc.)
 - Special stats: advanced skills (empowerment, illusion, energy handling)
 - Supernatural stats: transformation abilities (JSONB in database)
+- Multiple talents: Each stat group can be talented independently, allowing flexible character builds
 
 **Pattern**: Composition of value objects maintains clean domain model while supporting complex game mechanics
+
+### Multi-Talent System (2024 Refactor)
+
+**Evolution**: Refactored from single basic/special talent selection to multiple independent talent flags
+
+**Previous System**:
+- `BasicTalentType` enum: one of physical, mental, coordination, energy
+- `SpecialTalentType` enum: one of physical, mental, energy
+- Limited to 2 total talents per character
+
+**New System**:
+- 6 independent `isTalented` boolean flags on stat groups
+- Allows multiple talent combinations (e.g., physical + mental + energy skills)
+- More flexible character progression system
+- Calculation methods updated to use boolean flags instead of enum comparisons
+
+**Migration**: `004_update_pjs_talents_system` converts existing talent enums to boolean flags
 
 ### Aggregate Persistence with Children
 

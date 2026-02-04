@@ -6,16 +6,16 @@ const (
 	energyTalentedCost = energyDefaultCost / 2
 )
 
-func (ss *SpecialStats) GetRequiredXP(basicTalent BasicTalentType, specialTalent SpecialTalentType) int {
+func (ss *SpecialStats) GetRequiredXP() int {
 	physicalGroup := ss.physical.getGroup()
 	energyGroup := ss.energy.getGroup()
 	mentalGroup := ss.mental.getGroup()
 
-	physicalXP := getGroupRequiredXP(physicalGroup, levelStepSpecial, getSpecialFirstLevelCost(specialTalent, SpecialTalentPhysical))
-	energyXP := getGroupRequiredXP(energyGroup, levelStepSpecial, getSpecialFirstLevelCost(specialTalent, SpecialTalentEnergy))
-	mentalXP := getGroupRequiredXP(mentalGroup, levelStepSpecial, getSpecialFirstLevelCost(specialTalent, SpecialTalentMental))
+	physicalXP := getGroupRequiredXP(physicalGroup, levelStepSpecial, getSpecialFirstLevelCost(ss.physical.isTalented))
+	energyXP := getGroupRequiredXP(energyGroup, levelStepSpecial, getSpecialFirstLevelCost(ss.energy.isTalented))
+	mentalXP := getGroupRequiredXP(mentalGroup, levelStepSpecial, getSpecialFirstLevelCost(ss.mental.isTalented))
 
-	energyCost := getEnergyTankCost(basicTalent)
+	energyCost := getEnergyTankCost(ss.isEnergyTalented)
 
 	energyTankXP := energyCost * ss.energyTank
 
@@ -34,18 +34,15 @@ func (es EnergySkills) getGroup() []uint {
 	return []uint{es.energyHandling + es.objectHandling}
 }
 
-func getSpecialFirstLevelCost(talent, target SpecialTalentType) uint {
-	var firtsLevelCost uint = 1
-
-	if talent != target {
-		firtsLevelCost = 2
+func getSpecialFirstLevelCost(isTalented bool) uint {
+	if isTalented {
+		return 1
 	}
-
-	return firtsLevelCost
+	return 2
 }
 
-func getEnergyTankCost(basicTalent BasicTalentType) uint {
-	if basicTalent == BasicTalentEnergy {
+func getEnergyTankCost(isEnergyTalented bool) uint {
+	if isEnergyTalented {
 		return energyTalentedCost
 	}
 

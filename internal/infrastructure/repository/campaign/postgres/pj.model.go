@@ -40,45 +40,50 @@ type PJ struct {
 	Age           uint
 	Look          uint
 	Charisma      int
-	Villainy      uint
-	Heroism       uint
-	PjType        campaign.PJType            `gorm:"column:pj_type"`
-	BasicTalent   campaign.BasicTalentType   `gorm:"column:basic_talent"`
-	SpecialTalent campaign.SpecialTalentType `gorm:"column:special_talent"`
+	Villainy uint
+	Heroism  uint
+	PjType   campaign.PJType `gorm:"column:pj_type"`
 
 	// Basic Stats - Physical
-	Strength   uint
-	Agility    uint
-	Speed      uint
-	Resistance uint
+	Strength          uint
+	Agility           uint
+	Speed             uint
+	Resistance        uint
+	IsPhysicalTalented bool `gorm:"column:is_physical_talented"`
 
 	// Basic Stats - Mental
-	Inteligence   uint
-	Wisdom        uint
-	Concentration uint
-	Will          uint
+	Inteligence      uint
+	Wisdom           uint
+	Concentration    uint
+	Will             uint
+	IsMentalTalented bool `gorm:"column:is_mental_talented"`
 
 	// Basic Stats - Coordination
-	Precision   uint
-	Calculation uint
-	Range       uint
-	Reflexes    uint
+	Precision            uint
+	Calculation          uint
+	Range                uint
+	Reflexes             uint
+	IsCoordinationTalented bool `gorm:"column:is_coordination_talented"`
 
 	// Basic Stats - Life
 	Life uint
 
 	// Special Stats - Physical
-	Empowerment  uint
-	VitalControl uint `gorm:"column:vital_control"`
+	Empowerment               uint
+	VitalControl              uint `gorm:"column:vital_control"`
+	IsPhysicalSkillsTalented  bool `gorm:"column:is_physical_skills_talented"`
 
 	// Special Stats - Mental
-	Ilusion       uint
-	MentalControl uint `gorm:"column:mental_control"`
+	Ilusion                 uint
+	MentalControl           uint `gorm:"column:mental_control"`
+	IsMentalSkillsTalented  bool `gorm:"column:is_mental_skills_talented"`
 
 	// Special Stats - Energy
-	ObjectHandling uint `gorm:"column:object_handling"`
-	EnergyHandling uint `gorm:"column:energy_handling"`
-	EnergyTank     uint `gorm:"column:energy_tank"`
+	ObjectHandling          uint `gorm:"column:object_handling"`
+	EnergyHandling          uint `gorm:"column:energy_handling"`
+	EnergyTank              uint `gorm:"column:energy_tank"`
+	IsEnergySkillsTalented  bool `gorm:"column:is_energy_skills_talented"`
+	IsEnergyTalented        bool `gorm:"column:is_energy_talented"`
 
 	// Supernatural Stats (nullable)
 	SupernaturalStats *SupernaturalStatsJSON `gorm:"type:jsonb"`
@@ -89,54 +94,59 @@ type PJ struct {
 
 func GetModelFromDomainPJ(pj *campaign.PJ, campaignID string) *PJ {
 	model := &PJ{
-		ID:            pj.ID(),
-		CampaignID:    campaignID,
-		UserID:        pj.UserID(),
-		Name:          pj.Name(),
-		Weight:        pj.Weight(),
-		Height:        pj.Height(),
-		Age:           pj.Age(),
-		Look:          pj.Look(),
-		Charisma:      pj.Charisma(),
-		Villainy:      pj.Villainy(),
-		Heroism:       pj.Heroism(),
-		PjType:        pj.Type(),
-		BasicTalent:   pj.BasicTalent(),
-		SpecialTalent: pj.SpecialTalent(),
+		ID:         pj.ID(),
+		CampaignID: campaignID,
+		UserID:     pj.UserID(),
+		Name:       pj.Name(),
+		Weight:     pj.Weight(),
+		Height:     pj.Height(),
+		Age:        pj.Age(),
+		Look:       pj.Look(),
+		Charisma:   pj.Charisma(),
+		Villainy:   pj.Villainy(),
+		Heroism:    pj.Heroism(),
+		PjType:     pj.Type(),
 
 		// Basic Stats - Physical
-		Strength:   pj.BasicStats().Physical().Strength(),
-		Agility:    pj.BasicStats().Physical().Agility(),
-		Speed:      pj.BasicStats().Physical().Speed(),
-		Resistance: pj.BasicStats().Physical().Resistance(),
+		Strength:           pj.BasicStats().Physical().Strength(),
+		Agility:            pj.BasicStats().Physical().Agility(),
+		Speed:              pj.BasicStats().Physical().Speed(),
+		Resistance:         pj.BasicStats().Physical().Resistance(),
+		IsPhysicalTalented: pj.BasicStats().Physical().IsTalented(),
 
 		// Basic Stats - Mental
-		Inteligence:   pj.BasicStats().Mental().Inteligence(),
-		Wisdom:        pj.BasicStats().Mental().Wisdom(),
-		Concentration: pj.BasicStats().Mental().Concentration(),
-		Will:          pj.BasicStats().Mental().Will(),
+		Inteligence:      pj.BasicStats().Mental().Inteligence(),
+		Wisdom:           pj.BasicStats().Mental().Wisdom(),
+		Concentration:    pj.BasicStats().Mental().Concentration(),
+		Will:             pj.BasicStats().Mental().Will(),
+		IsMentalTalented: pj.BasicStats().Mental().IsTalented(),
 
 		// Basic Stats - Coordination
-		Precision:   pj.BasicStats().Coordination().Precision(),
-		Calculation: pj.BasicStats().Coordination().Calculation(),
-		Range:       pj.BasicStats().Coordination().Range(),
-		Reflexes:    pj.BasicStats().Coordination().Reflexes(),
+		Precision:              pj.BasicStats().Coordination().Precision(),
+		Calculation:            pj.BasicStats().Coordination().Calculation(),
+		Range:                  pj.BasicStats().Coordination().Range(),
+		Reflexes:               pj.BasicStats().Coordination().Reflexes(),
+		IsCoordinationTalented: pj.BasicStats().Coordination().IsTalented(),
 
 		// Basic Stats - Life
 		Life: pj.BasicStats().Life(),
 
 		// Special Stats - Physical
-		Empowerment:  pj.SpecialStats().Physical().Empowerment(),
-		VitalControl: pj.SpecialStats().Physical().VitalControl(),
+		Empowerment:              pj.SpecialStats().Physical().Empowerment(),
+		VitalControl:             pj.SpecialStats().Physical().VitalControl(),
+		IsPhysicalSkillsTalented: pj.SpecialStats().Physical().IsTalented(),
 
 		// Special Stats - Mental
-		Ilusion:       pj.SpecialStats().Mental().Ilusion(),
-		MentalControl: pj.SpecialStats().Mental().MentalControl(),
+		Ilusion:                pj.SpecialStats().Mental().Ilusion(),
+		MentalControl:          pj.SpecialStats().Mental().MentalControl(),
+		IsMentalSkillsTalented: pj.SpecialStats().Mental().IsTalented(),
 
 		// Special Stats - Energy
-		ObjectHandling: pj.SpecialStats().Energy().ObjectHandling(),
-		EnergyHandling: pj.SpecialStats().Energy().EnergyHandling(),
-		EnergyTank:     pj.SpecialStats().EnergyTank(),
+		ObjectHandling:         pj.SpecialStats().Energy().ObjectHandling(),
+		EnergyHandling:         pj.SpecialStats().Energy().EnergyHandling(),
+		EnergyTank:             pj.SpecialStats().EnergyTank(),
+		IsEnergySkillsTalented: pj.SpecialStats().Energy().IsTalented(),
+		IsEnergyTalented:       pj.SpecialStats().IsEnergyTalented(),
 	}
 
 	// Handle supernatural stats if present
@@ -163,6 +173,7 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		pj.Agility,
 		pj.Speed,
 		pj.Resistance,
+		pj.IsPhysicalTalented,
 	)
 
 	// Reconstruct Mental
@@ -171,6 +182,7 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		pj.Wisdom,
 		pj.Concentration,
 		pj.Will,
+		pj.IsMentalTalented,
 	)
 
 	// Reconstruct Coordination
@@ -179,6 +191,7 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		pj.Calculation,
 		pj.Range,
 		pj.Reflexes,
+		pj.IsCoordinationTalented,
 	)
 
 	// Reconstruct BasicStats
@@ -193,18 +206,21 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 	physicalSkills := campaign.CreatePhysicalSkillsWithoutValidation(
 		pj.Empowerment,
 		pj.VitalControl,
+		pj.IsPhysicalSkillsTalented,
 	)
 
 	// Reconstruct MentalSkills
 	mentalSkills := campaign.CreateMentalSkillsWithoutValidation(
 		pj.Ilusion,
 		pj.MentalControl,
+		pj.IsMentalSkillsTalented,
 	)
 
 	// Reconstruct EnergySkills
 	energySkills := campaign.CreateEnergySkillsWithoutValidation(
 		pj.ObjectHandling,
 		pj.EnergyHandling,
+		pj.IsEnergySkillsTalented,
 	)
 
 	// Reconstruct SpecialStats
@@ -213,6 +229,7 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		mentalSkills,
 		energySkills,
 		pj.EnergyTank,
+		pj.IsEnergyTalented,
 	)
 
 	// Reconstruct SupernaturalStats if present
@@ -237,8 +254,6 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		pj.Villainy,
 		pj.Heroism,
 		pj.PjType,
-		pj.BasicTalent,
-		pj.SpecialTalent,
 		basicStats,
 		specialStats,
 		supernaturalStats,

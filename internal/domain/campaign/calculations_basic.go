@@ -5,14 +5,14 @@ const (
 	costLife       = 5
 )
 
-func (bs *BasicStats) GetRequiredXP(basicTalent BasicTalentType) int {
+func (bs *BasicStats) GetRequiredXP() int {
 	physicalGroup := bs.physical.getGroup()
 	mentalGroup := bs.mental.getGroup()
 	coordGroup := bs.coordination.getGroup()
 
-	physicalXP := getGroupRequiredXP(physicalGroup, levelStepBasic, getBasicFirstLevelCost(basicTalent, BasicTalentPhysical))
-	mentalXP := getGroupRequiredXP(mentalGroup, levelStepBasic, getBasicFirstLevelCost(basicTalent, BasicTalentMental))
-	coordXP := getGroupRequiredXP(coordGroup, levelStepBasic, getBasicFirstLevelCost(basicTalent, BasicTalentCoordination))
+	physicalXP := getGroupRequiredXP(physicalGroup, levelStepBasic, getFirstLevelCost(bs.physical.isTalented))
+	mentalXP := getGroupRequiredXP(mentalGroup, levelStepBasic, getFirstLevelCost(bs.mental.isTalented))
+	coordXP := getGroupRequiredXP(coordGroup, levelStepBasic, getFirstLevelCost(bs.coordination.isTalented))
 
 	lifeXP := costLife * bs.life
 
@@ -31,14 +31,11 @@ func (c Coordination) getGroup() []uint {
 	return []uint{c.precision, c.calculation, c.coordRange, c.reflexes}
 }
 
-func getBasicFirstLevelCost(talent, target BasicTalentType) uint {
-	var firtsLevelCost uint = 1
-
-	if talent != target {
-		firtsLevelCost = 3
+func getFirstLevelCost(isTalented bool) uint {
+	if isTalented {
+		return 1
 	}
-
-	return firtsLevelCost
+	return 3
 }
 
 func (bs BasicStats) isHigherThan(bsB BasicStats) bool {

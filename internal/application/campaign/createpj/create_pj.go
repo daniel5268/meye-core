@@ -46,17 +46,22 @@ func (uc *UseCase) Execute(ctx context.Context, input applicationcampaign.Create
 	}
 
 	params := domaincampaign.PJCreateParameters{
-		Name:          input.PJInfo.Name,
-		Weight:        input.PJInfo.Weight,
-		Height:        input.PJInfo.Height,
-		Age:           input.PJInfo.Age,
-		Look:          input.PJInfo.Look,
-		Charisma:      input.PJInfo.Charisma,
-		Villainy:      input.PJInfo.Villainy,
-		Heroism:       input.PJInfo.Heroism,
-		PjType:        input.PJInfo.PjType,
-		BasicTalent:   input.PJInfo.BasicTalent,
-		SpecialTalent: input.PJInfo.SpecialTalent,
+		Name:                     input.PJInfo.Name,
+		Weight:                   input.PJInfo.Weight,
+		Height:                   input.PJInfo.Height,
+		Age:                      input.PJInfo.Age,
+		Look:                     input.PJInfo.Look,
+		Charisma:                 input.PJInfo.Charisma,
+		Villainy:                 input.PJInfo.Villainy,
+		Heroism:                  input.PJInfo.Heroism,
+		PjType:                   input.PJInfo.PjType,
+		IsPhysicalTalented:       input.PJInfo.IsPhysicalTalented,
+		IsMentalTalented:         input.PJInfo.IsMentalTalented,
+		IsCoordinationTalented:   input.PJInfo.IsCoordinationTalented,
+		IsPhysicalSkillsTalented: input.PJInfo.IsPhysicalSkillsTalented,
+		IsMentalSkillsTalented:   input.PJInfo.IsMentalSkillsTalented,
+		IsEnergySkillsTalented:   input.PJInfo.IsEnergySkillsTalented,
+		IsEnergyTalented:         input.PJInfo.IsEnergyTalented,
 	}
 
 	pj, err := camp.AddPJ(input.IDs.UserID, params, uc.identificationService)
