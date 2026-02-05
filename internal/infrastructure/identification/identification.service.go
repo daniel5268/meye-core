@@ -1,11 +1,17 @@
 package identification
 
-import "github.com/google/uuid"
+import (
+	"meye-core/internal/domain/shared"
+
+	"github.com/google/uuid"
+)
+
+var _ shared.IdentificationService = (*Service)(nil)
 
 type Service struct{}
 
-// NewService creates a new Identification Service.
-func NewService() *Service {
+// New creates a new Identification Service.
+func New() *Service {
 	return &Service{}
 }
 

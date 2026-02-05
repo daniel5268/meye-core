@@ -101,10 +101,10 @@ meye-core/
 │
 ├── tests/
 │   ├── mocks/                         # Generated mocks (gomock)
-│   └── testdata/                      # Test data builders
-│       ├── user.testdata.go
-│       ├── campaign.testdata.go
-│       └── pj.testdata.go
+│   └── data/                      # Test data builders
+│       ├── user.data.go
+│       ├── campaign.data.go
+│       └── pj.data.go
 │
 ├── migrations/                        # Database migrations
 │   ├── 000_create_users_table.up.sql
@@ -651,10 +651,10 @@ type UserUseCases struct {
 2. **Use Case Tests**: In use case packages with `_test` suffix
    - Use mocks for domain ports
 
-**Test Data Builders** (`tests/testdata/`):
-- `user.testdata.go` - User fixtures
-- `campaign.testdata.go` - Campaign fixtures
-- `pj.testdata.go` - PJ stat fixtures, complex value objects
+**Test Data Builders** (`tests/data/`):
+- `user.data.go` - User fixtures
+- `campaign.data.go` - Campaign fixtures
+- `pj.data.go` - PJ stat fixtures, complex value objects
 
 ---
 

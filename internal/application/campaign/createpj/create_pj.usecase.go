@@ -18,7 +18,7 @@ type UseCase struct {
 	identificationService shared.IdentificationService
 }
 
-func NewCreatePJUseCase(campRepo domaincampaign.Repository, userRepo domainuser.Repository, idServ shared.IdentificationService) *UseCase {
+func New(campRepo domaincampaign.Repository, userRepo domainuser.Repository, idServ shared.IdentificationService) *UseCase {
 	return &UseCase{
 		campaignRepository:    campRepo,
 		userRepository:        userRepo,

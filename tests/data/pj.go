@@ -1,4 +1,4 @@
-package testdata
+package data
 
 import "meye-core/internal/domain/campaign"
 
@@ -78,4 +78,4 @@ func SpecialStatsWithEnergyTankTalent() campaign.SpecialStats {
 	)
 }
 
-const PJID = "test-pj-id"
+const PjID = "test-pj-id"

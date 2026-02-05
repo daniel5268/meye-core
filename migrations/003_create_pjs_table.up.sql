@@ -55,6 +55,11 @@ CREATE TABLE pjs (
     -- Supernatural Stats (nullable for human PJs)
     supernatural_stats JSONB,
 
+    -- Experience Points
+    xp_basic INTEGER NOT NULL DEFAULT 0,
+    xp_special INTEGER NOT NULL DEFAULT 0,
+    xp_supernatural INTEGER NOT NULL DEFAULT 0,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 

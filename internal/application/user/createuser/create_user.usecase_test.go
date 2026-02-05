@@ -6,8 +6,8 @@ import (
 	applicationuser "meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/domain/user"
+	"meye-core/tests/data"
 	"meye-core/tests/mocks"
-	"meye-core/tests/testdata"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,14 +26,14 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 	ctx := context.Background()
 
-	s := createuser.NewUseCase(userRepoMock, idServiceMock, hashServiceMock)
+	s := createuser.New(userRepoMock, idServiceMock, hashServiceMock)
 
 	errTest := errors.New("mock_err")
 
 	defaultInput := applicationuser.CreateUserInput{
-		Username: testdata.Username,
-		Password: testdata.Password,
-		Role:     testdata.Role,
+		Username: data.Username,
+		Password: data.Password,
+		Role:     data.Role,
 	}
 
 	tests := []struct {
@@ -47,25 +47,25 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			input: defaultInput,
 			want: want{
 				output: applicationuser.UserOutput{
-					ID:       testdata.UserID,
-					Username: testdata.Username,
-					Role:     testdata.Role,
+					ID:       data.UserID,
+					Username: data.Username,
+					Role:     data.Role,
 				},
 				err: nil,
 			},
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
-					Return(testdata.HashedPassword, nil).
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
 					Times(1)
 
 				userRepoMock.EXPECT().
-					FindByUsername(ctx, testdata.Username).
+					FindByUsername(ctx, data.Username).
 					Return(nil, nil).
 					Times(1)
 
@@ -85,16 +85,16 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
-					Return(testdata.HashedPassword, nil).
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
 					Times(1)
 
 				userRepoMock.EXPECT().
-					FindByUsername(ctx, testdata.Username).
+					FindByUsername(ctx, data.Username).
 					Return(nil, nil).
 					Times(1)
 
@@ -114,16 +114,16 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
+					Hash(data.Password).
 					Return("", errTest).
 					Times(1)
 
 				userRepoMock.EXPECT().
-					FindByUsername(ctx, testdata.Username).
+					FindByUsername(ctx, data.Username).
 					Times(0)
 
 				userRepoMock.EXPECT().
@@ -141,23 +141,23 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			setupMocks: func() {
 				existingUser := user.CreateUserWithoutValidation(
 					"existing-id",
-					testdata.Username,
-					testdata.HashedPassword,
-					testdata.Role,
+					data.Username,
+					data.HashedPassword,
+					data.Role,
 				)
 
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
-					Return(testdata.HashedPassword, nil).
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
 					Times(1)
 
 				userRepoMock.EXPECT().
-					FindByUsername(ctx, testdata.Username).
+					FindByUsername(ctx, data.Username).
 					Return(existingUser, nil).
 					Times(1)
 
@@ -176,16 +176,16 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
-					Return(testdata.HashedPassword, nil).
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
 					Times(1)
 
 				userRepoMock.EXPECT().
-					FindByUsername(ctx, testdata.Username).
+					FindByUsername(ctx, data.Username).
 					Return(nil, errTest).
 					Times(1)
 
@@ -207,7 +207,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 			tt.setupMocks()
 
-			s = createuser.NewUseCase(userRepoMock, idServiceMock, hashServiceMock)
+			s = createuser.New(userRepoMock, idServiceMock, hashServiceMock)
 
 			output, err := s.Execute(ctx, tt.input)
 

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"meye-core/internal/application/campaign"
+	"meye-core/internal/application/session"
 	dto "meye-core/internal/infrastructure/api/handler/dto/campaign"
 	"net/http"
 
@@ -12,13 +13,20 @@ type CampaignHandler struct {
 	createCampaignUseCase campaign.CreateCampaignUseCase
 	inviteUserUseCase     campaign.InviteUserUseCase
 	createPJUseCase       campaign.CreatePJUseCase
+	createSessionUseCase  session.CreateSessionUseCase
 }
 
-func NewCampaignHandler(createCampaignUseCase campaign.CreateCampaignUseCase, inviteUserUseCase campaign.InviteUserUseCase, createPJUseCase campaign.CreatePJUseCase) *CampaignHandler {
+func NewCampaignHandler(
+	createCampaignUseCase campaign.CreateCampaignUseCase,
+	inviteUserUseCase campaign.InviteUserUseCase,
+	createPJUseCase campaign.CreatePJUseCase,
+	createSessionUseCase session.CreateSessionUseCase,
+) *CampaignHandler {
 	return &CampaignHandler{
 		createCampaignUseCase: createCampaignUseCase,
 		inviteUserUseCase:     inviteUserUseCase,
 		createPJUseCase:       createPJUseCase,
+		createSessionUseCase:  createSessionUseCase,
 	}
 }
 
@@ -145,4 +153,47 @@ func (h *CampaignHandler) CreatePJ(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, dto.MapPJOutputBody(output))
+}
+
+func (h *CampaignHandler) CreateSession(c *gin.Context) {
+	var pathParams dto.CampaignPathParams
+
+	if err := c.ShouldBindUri(&pathParams); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var reqBody dto.CreateSessionInputBody
+
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	xpAss := make([]session.XPAssignation, 0, len(reqBody.XPAssignations))
+	for _, xpA := range reqBody.XPAssignations {
+		xpAss = append(xpAss, session.XPAssignation{
+			PjID: xpA.PjID,
+			Amounts: session.XPAmounts{
+				Basic:        xpA.Amounts.Basic,
+				Special:      xpA.Amounts.Special,
+				SuperNatural: xpA.Amounts.SuperNatural,
+			},
+			Reason: xpA.Reason,
+		})
+	}
+
+	input := session.CreateSessionInput{
+		CampaignID:     pathParams.CampaignID,
+		Summary:        reqBody.Summary,
+		XPAssignations: xpAss,
+	}
+
+	output, err := h.createSessionUseCase.Execute(c.Request.Context(), input)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.MapSessionOutput(output))
 }

@@ -135,6 +135,12 @@ type SupernaturalStats struct {
 	Skills []Skill
 }
 
+type XP struct {
+	Basic        uint
+	Special      uint
+	Supernatural uint
+}
+
 type PJOutput struct {
 	ID                string
 	UserID            string
@@ -150,6 +156,7 @@ type PJOutput struct {
 	BasicStats        BasicStats
 	SpecialStats      SpecialStats
 	SupernaturalStats *SupernaturalStats
+	XP                XP
 }
 
 func MapPJOutput(pj *campaign.PJ) PJOutput {
@@ -207,6 +214,11 @@ func MapPJOutput(pj *campaign.PJ) PJOutput {
 			},
 			EnergyTank:       pj.SpecialStats().EnergyTank(),
 			IsEnergyTalented: pj.SpecialStats().IsEnergyTalented(),
+		},
+		XP: XP{
+			Basic:        pj.XP().Basic(),
+			Special:      pj.XP().Special(),
+			Supernatural: pj.XP().Supernatural(),
 		},
 	}
 

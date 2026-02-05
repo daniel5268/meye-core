@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var _ campaign.Repository = (*Repository)(nil)
+
 type Repository struct {
 	db *gorm.DB
 }
@@ -101,54 +103,54 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 
 		// Get current PJs from the domain
 		domainPJs := c.PJs()
-		newPJIDs := make(map[string]bool)
+		newPjIDs := make(map[string]bool)
 
 		// Insert or update PJs
 		for _, domainPJ := range domainPJs {
 			pjModel := GetModelFromDomainPJ(&domainPJ, c.ID())
-			newPJIDs[pjModel.ID] = true
+			newPjIDs[pjModel.ID] = true
 
 			result := tx.Clauses(clause.OnConflict{
 				Columns: []clause.Column{{Name: "id"}},
 				DoUpdates: clause.Assignments(map[string]interface{}{
-					"name":                         pjModel.Name,
-					"weight":                       pjModel.Weight,
-					"height":                       pjModel.Height,
-					"age":                          pjModel.Age,
-					"look":                         pjModel.Look,
-					"charisma":                     pjModel.Charisma,
-					"villainy":                     pjModel.Villainy,
-					"heroism":                      pjModel.Heroism,
-					"pj_type":                      pjModel.PjType,
-					"strength":                     pjModel.Strength,
-					"agility":                      pjModel.Agility,
-					"speed":                        pjModel.Speed,
-					"resistance":                   pjModel.Resistance,
-					"is_physical_talented":         pjModel.IsPhysicalTalented,
-					"inteligence":                  pjModel.Inteligence,
-					"wisdom":                       pjModel.Wisdom,
-					"concentration":                pjModel.Concentration,
-					"will":                         pjModel.Will,
-					"is_mental_talented":           pjModel.IsMentalTalented,
-					"precision":                    pjModel.Precision,
-					"calculation":                  pjModel.Calculation,
-					"range":                        pjModel.Range,
-					"reflexes":                     pjModel.Reflexes,
-					"is_coordination_talented":     pjModel.IsCoordinationTalented,
-					"life":                         pjModel.Life,
-					"empowerment":                  pjModel.Empowerment,
-					"vital_control":                pjModel.VitalControl,
-					"is_physical_skills_talented":  pjModel.IsPhysicalSkillsTalented,
-					"ilusion":                      pjModel.Ilusion,
-					"mental_control":               pjModel.MentalControl,
-					"is_mental_skills_talented":    pjModel.IsMentalSkillsTalented,
-					"object_handling":              pjModel.ObjectHandling,
-					"energy_handling":              pjModel.EnergyHandling,
-					"energy_tank":                  pjModel.EnergyTank,
-					"is_energy_skills_talented":    pjModel.IsEnergySkillsTalented,
-					"is_energy_talented":           pjModel.IsEnergyTalented,
-					"supernatural_stats":           pjModel.SupernaturalStats,
-					"updated_at":                   gorm.Expr("CURRENT_TIMESTAMP"),
+					"name":                        pjModel.Name,
+					"weight":                      pjModel.Weight,
+					"height":                      pjModel.Height,
+					"age":                         pjModel.Age,
+					"look":                        pjModel.Look,
+					"charisma":                    pjModel.Charisma,
+					"villainy":                    pjModel.Villainy,
+					"heroism":                     pjModel.Heroism,
+					"pj_type":                     pjModel.PjType,
+					"strength":                    pjModel.Strength,
+					"agility":                     pjModel.Agility,
+					"speed":                       pjModel.Speed,
+					"resistance":                  pjModel.Resistance,
+					"is_physical_talented":        pjModel.IsPhysicalTalented,
+					"inteligence":                 pjModel.Inteligence,
+					"wisdom":                      pjModel.Wisdom,
+					"concentration":               pjModel.Concentration,
+					"will":                        pjModel.Will,
+					"is_mental_talented":          pjModel.IsMentalTalented,
+					"precision":                   pjModel.Precision,
+					"calculation":                 pjModel.Calculation,
+					"range":                       pjModel.Range,
+					"reflexes":                    pjModel.Reflexes,
+					"is_coordination_talented":    pjModel.IsCoordinationTalented,
+					"life":                        pjModel.Life,
+					"empowerment":                 pjModel.Empowerment,
+					"vital_control":               pjModel.VitalControl,
+					"is_physical_skills_talented": pjModel.IsPhysicalSkillsTalented,
+					"ilusion":                     pjModel.Ilusion,
+					"mental_control":              pjModel.MentalControl,
+					"is_mental_skills_talented":   pjModel.IsMentalSkillsTalented,
+					"object_handling":             pjModel.ObjectHandling,
+					"energy_handling":             pjModel.EnergyHandling,
+					"energy_tank":                 pjModel.EnergyTank,
+					"is_energy_skills_talented":   pjModel.IsEnergySkillsTalented,
+					"is_energy_talented":          pjModel.IsEnergyTalented,
+					"supernatural_stats":          pjModel.SupernaturalStats,
+					"updated_at":                  gorm.Expr("CURRENT_TIMESTAMP"),
 				}),
 			}).Create(pjModel)
 
@@ -158,9 +160,9 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 		}
 
 		// Delete PJs that are no longer in the domain array
-		if len(newPJIDs) > 0 {
-			pjIDsToKeep := make([]string, 0, len(newPJIDs))
-			for id := range newPJIDs {
+		if len(newPjIDs) > 0 {
+			pjIDsToKeep := make([]string, 0, len(newPjIDs))
+			for id := range newPjIDs {
 				pjIDsToKeep = append(pjIDsToKeep, id)
 			}
 

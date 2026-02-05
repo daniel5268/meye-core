@@ -2,7 +2,6 @@ package campaign
 
 import (
 	"meye-core/internal/domain/shared"
-	"meye-core/internal/domain/user"
 )
 
 type Campaign struct {
@@ -23,12 +22,8 @@ func NewCampaign(masterID, name string, identificationService shared.Identificat
 	}
 }
 
-func (c *Campaign) InviteUser(u *user.User, identificationService shared.IdentificationService) (*Invitation, error) {
-	if !u.IsPlayer() {
-		return nil, user.ErrUserNotPlayer
-	}
-
-	invitation := NewInvitation(c.id, u.ID(), identificationService)
+func (c *Campaign) InviteUser(userID string, identificationService shared.IdentificationService) (*Invitation, error) {
+	invitation := NewInvitation(c.id, userID, identificationService)
 	c.invitations = append(c.invitations, *invitation)
 
 	return invitation, nil
@@ -82,59 +77,6 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 
 	inv.accept()
 
-	// Create basic stats with talent information
-	physical := Physical{
-		strength:   0,
-		agility:    0,
-		speed:      0,
-		resistance: 0,
-		isTalented: params.IsPhysicalTalented,
-	}
-	mental := Mental{
-		inteligence:   0,
-		wisdom:        0,
-		concentration: 0,
-		will:          0,
-		isTalented:    params.IsMentalTalented,
-	}
-	coordination := Coordination{
-		precision:   0,
-		calculation: 0,
-		coordRange:  0,
-		reflexes:    0,
-		isTalented:  params.IsCoordinationTalented,
-	}
-	basicStats := BasicStats{
-		physical:     physical,
-		mental:       mental,
-		coordination: coordination,
-		life:         0,
-	}
-
-	// Create special stats with talent information
-	physicalSkills := PhysicalSkills{
-		empowerment:  0,
-		vitalControl: 0,
-		isTalented:   params.IsPhysicalSkillsTalented,
-	}
-	mentalSkills := MentalSkills{
-		ilusion:       0,
-		mentalControl: 0,
-		isTalented:    params.IsMentalSkillsTalented,
-	}
-	energySkills := EnergySkills{
-		objectHandling: 0,
-		energyHandling: 0,
-		isTalented:     params.IsEnergySkillsTalented,
-	}
-	specialStats := SpecialStats{
-		physical:         physicalSkills,
-		mental:           mentalSkills,
-		energy:           energySkills,
-		energyTank:       0,
-		isEnergyTalented: params.IsEnergyTalented,
-	}
-
 	pj := &PJ{
 		id:                identificationService.GenerateID(),
 		userID:            userID,
@@ -147,10 +89,20 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 		villainy:          params.Villainy,
 		heroism:           params.Heroism,
 		pjType:            params.PjType,
-		basicStats:        basicStats,
-		specialStats:      specialStats,
 		supernaturalStats: supernaturalStats,
 	}
+
+	pj.basicStats.physical.isTalented = params.IsPhysicalTalented
+	pj.basicStats.mental.isTalented = params.IsMentalTalented
+	pj.basicStats.coordination.isTalented = params.IsCoordinationTalented
+
+	pj.specialStats.physical.isTalented = params.IsPhysicalSkillsTalented
+	pj.specialStats.energy.isTalented = params.IsEnergySkillsTalented
+	pj.specialStats.mental.isTalented = params.IsMentalSkillsTalented
+
+	pj.specialStats.isEnergyTalented = params.IsEnergyTalented
+
+	pj.xp = CreateXPWithoutValidation(0, 0, 0)
 
 	c.pjs = append(c.pjs, *pj)
 
@@ -171,4 +123,29 @@ func CreateCampaignWithoutValidation(id, masterID, name string, invitations []In
 		invitations: invitations,
 		pjs:         pjs,
 	}
+}
+
+func (c *Campaign) FindPjByID(pjID string) *PJ {
+	for i := range c.pjs {
+		if c.pjs[i].id == pjID {
+			return &c.pjs[i]
+		}
+	}
+
+	return nil
+}
+
+func (c *Campaign) MustContainPjs(pjIDs []string) error {
+	campaignPJs := make(map[string]struct{}, len(c.pjs))
+	for _, pj := range c.pjs {
+		campaignPJs[pj.id] = struct{}{}
+	}
+
+	for _, pjID := range pjIDs {
+		if _, exists := campaignPJs[pjID]; !exists {
+			return ErrPJsNotInCampaign
+		}
+	}
+
+	return nil
 }

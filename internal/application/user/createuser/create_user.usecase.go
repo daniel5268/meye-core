@@ -17,7 +17,7 @@ type UseCase struct {
 	hashService           domainuser.HashService
 }
 
-func NewUseCase(usRepo domainuser.Repository, idServ shared.IdentificationService, hashServ domainuser.HashService) *UseCase {
+func New(usRepo domainuser.Repository, idServ shared.IdentificationService, hashServ domainuser.HashService) *UseCase {
 	return &UseCase{
 		userRepository:        usRepo,
 		identificationService: idServ,

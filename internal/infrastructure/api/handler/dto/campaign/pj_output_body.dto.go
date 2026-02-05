@@ -17,6 +17,13 @@ type PJOutputBody struct {
 	BasicStats        BasicStatsBody         `json:"basic_stats"`
 	SpecialStats      SpecialStatsBody       `json:"special_stats"`
 	SupernaturalStats *SupernaturalStatsBody `json:"supernatural_stats,omitempty"`
+	XP                XPBody                 `json:"xp"`
+}
+
+type XPBody struct {
+	Basic        uint `json:"basic"`
+	Special      uint `json:"special"`
+	Supernatural uint `json:"supernatural"`
 }
 
 type BasicStatsBody struct {
@@ -141,6 +148,11 @@ func MapPJOutputBody(output campaign.PJOutput) PJOutputBody {
 			},
 			EnergyTank:       output.SpecialStats.EnergyTank,
 			IsEnergyTalented: output.SpecialStats.IsEnergyTalented,
+		},
+		XP: XPBody{
+			Basic:        output.XP.Basic,
+			Special:      output.XP.Special,
+			Supernatural: output.XP.Supernatural,
 		},
 	}
 

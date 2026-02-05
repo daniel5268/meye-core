@@ -85,6 +85,10 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequirePlayerRole(),
 			r.handlers.CampaignHandler.CreatePJ,
 		)
+		campaigns.POST("/:campaignID/sessions",
+			r.handlers.AuthHandler.RequireCampaignMaster(),
+			r.handlers.CampaignHandler.CreateSession,
+		)
 	}
 }
 

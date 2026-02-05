@@ -2,8 +2,8 @@ package campaign_test
 
 import (
 	"meye-core/internal/domain/campaign"
+	"meye-core/tests/data"
 	"meye-core/tests/mocks"
-	"meye-core/tests/testdata"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,13 +46,13 @@ func TestCampaign_AddPJ(t *testing.T) {
 	}{
 		{
 			name:     "PJ is added correctly when user is invited",
-			campaign: testdata.Campaign(t),
-			userID:   testdata.UserID,
+			campaign: data.Campaign(t),
+			userID:   data.UserID,
 			params:   defaultParams,
 			want: want{
 				pj: campaign.CreatePJWithoutValidation(
-					testdata.PJID,
-					testdata.UserID,
+					data.PjID,
+					data.UserID,
 					defaultParams.Name,
 					defaultParams.Weight,
 					defaultParams.Height,
@@ -78,19 +78,20 @@ func TestCampaign_AddPJ(t *testing.T) {
 					campaign.CreateSupernaturalStatsWithoutValidation([]campaign.Skill{
 						campaign.CreateSkillWithoutValidation([]uint{0}),
 					}),
+					campaign.CreateXPWithoutValidation(0, 0, 0),
 				),
 				err: nil,
 			},
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.PJID).
+					Return(data.PjID).
 					Times(1)
 			},
 		},
 		{
 			name:     "PJ is not added when user is not invited",
-			campaign: testdata.Campaign(t),
+			campaign: data.Campaign(t),
 			userID:   "not_invited",
 			params:   defaultParams,
 			want: want{

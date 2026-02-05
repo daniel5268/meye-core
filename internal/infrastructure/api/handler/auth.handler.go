@@ -3,7 +3,6 @@ package handler
 import (
 	"meye-core/internal/domain/campaign"
 	"meye-core/internal/domain/user"
-	"meye-core/internal/infrastructure/jwt"
 	"net/http"
 	"slices"
 	"strings"
@@ -13,7 +12,7 @@ import (
 
 type AuthHandler struct {
 	apiKey             string
-	jwtService         jwt.Service
+	jwtService         user.JWTService
 	userRepository     user.Repository
 	campaignRepository campaign.Repository
 }
@@ -28,7 +27,7 @@ var forbiddenError = responseError{Error: "Forbidden"}
 
 const AuthKey = "auth"
 
-func NewAuthHandler(apiKey string, jwtService jwt.Service, userRepo user.Repository, campaignRepo campaign.Repository) *AuthHandler {
+func NewAuthHandler(apiKey string, jwtService user.JWTService, userRepo user.Repository, campaignRepo campaign.Repository) *AuthHandler {
 	return &AuthHandler{
 		apiKey:             apiKey,
 		jwtService:         jwtService,

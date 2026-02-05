@@ -155,10 +155,10 @@ func CreateEnergySkillsWithoutValidation(objectHandling, energyHandling uint, is
 }
 
 type SpecialStats struct {
-	physical        PhysicalSkills
-	mental          MentalSkills
-	energy          EnergySkills
-	energyTank      uint
+	physical         PhysicalSkills
+	mental           MentalSkills
+	energy           EnergySkills
+	energyTank       uint
 	isEnergyTalented bool
 }
 
@@ -202,6 +202,24 @@ func CreateSupernaturalStatsWithoutValidation(skills []Skill) *SupernaturalStats
 	}
 }
 
+type XP struct {
+	basic        uint
+	special      uint
+	supernatural uint
+}
+
+func (xp XP) Basic() uint        { return xp.basic }
+func (xp XP) Special() uint      { return xp.special }
+func (xp XP) Supernatural() uint { return xp.supernatural }
+
+func CreateXPWithoutValidation(basic, special, supernatural uint) XP {
+	return XP{
+		basic:        basic,
+		special:      special,
+		supernatural: supernatural,
+	}
+}
+
 type PJ struct {
 	id                string
 	userID            string
@@ -217,6 +235,7 @@ type PJ struct {
 	basicStats        BasicStats
 	specialStats      SpecialStats
 	supernaturalStats *SupernaturalStats
+	xp                XP
 }
 
 // Getter methods
@@ -234,6 +253,7 @@ func (p *PJ) Type() PJType                          { return p.pjType }
 func (p *PJ) BasicStats() BasicStats                { return p.basicStats }
 func (p *PJ) SpecialStats() SpecialStats            { return p.specialStats }
 func (p *PJ) SupernaturalStats() *SupernaturalStats { return p.supernaturalStats }
+func (p *PJ) XP() XP                                { return p.xp }
 
 // CreatePJWithoutValidation creates a PJ instance without validation.
 // This function is intended to be used by adapters (like database repositories)
@@ -253,6 +273,7 @@ func CreatePJWithoutValidation(
 	basicStats BasicStats,
 	specialStats SpecialStats,
 	supernaturalStats *SupernaturalStats,
+	xp XP,
 ) *PJ {
 	return &PJ{
 		id:                id,
@@ -269,5 +290,6 @@ func CreatePJWithoutValidation(
 		basicStats:        basicStats,
 		specialStats:      specialStats,
 		supernaturalStats: supernaturalStats,
+		xp:                xp,
 	}
 }
