@@ -17,7 +17,7 @@ type UseCase struct {
 	identificationService shared.IdentificationService
 }
 
-func NewInviteUserUseCase(campainRepository domaincampaign.Repository, userRepository domainuser.Repository, identificationService shared.IdentificationService) *UseCase {
+func New(campainRepository domaincampaign.Repository, userRepository domainuser.Repository, identificationService shared.IdentificationService) *UseCase {
 	return &UseCase{
 		campainRepository:     campainRepository,
 		userRepository:        userRepository,
@@ -44,7 +44,12 @@ func (uc *UseCase) Execute(ctx context.Context, input applicationcampaign.Invite
 		return applicationcampaign.InvitationOutput{}, applicationuser.ErrUserNotFound
 	}
 
-	inv, err := cmp.InviteUser(user, uc.identificationService)
+	err = user.MustBePlayer()
+	if err != nil {
+		return applicationcampaign.InvitationOutput{}, err
+	}
+
+	inv, err := cmp.InviteUser(user.ID(), uc.identificationService)
 	if err != nil {
 		return applicationcampaign.InvitationOutput{}, err
 	}

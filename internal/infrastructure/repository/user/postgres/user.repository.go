@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var _ user.Repository = (*Repository)(nil)
+
 type Repository struct {
 	db *gorm.DB
 }

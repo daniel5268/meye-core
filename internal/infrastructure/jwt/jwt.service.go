@@ -9,6 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var _ user.JWTService = (*Service)(nil)
+
 type Service struct {
 	secret         string
 	issuer         string
@@ -20,7 +22,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewService(secret, issuer string, expirationTime time.Duration) *Service {
+func New(secret, issuer string, expirationTime time.Duration) *Service {
 	return &Service{
 		secret:         secret,
 		issuer:         issuer,

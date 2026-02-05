@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"meye-core/internal/domain/user"
+	"meye-core/tests/data"
 	"meye-core/tests/mocks"
-	"meye-core/tests/testdata"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -29,9 +29,9 @@ func TestNewUser(t *testing.T) {
 	var hashServiceMock *mocks.MockHashService
 
 	testDefaultParams := parameters{
-		username: testdata.Username,
-		password: testdata.Password,
-		role:     testdata.Role,
+		username: data.Username,
+		password: data.Password,
+		role:     data.Role,
 	}
 
 	errTest := errors.New("mock_err")
@@ -46,18 +46,18 @@ func TestNewUser(t *testing.T) {
 			name:   "successful user creation",
 			params: testDefaultParams,
 			want: want{
-				user: testdata.User(t),
+				user: data.User(t),
 				err:  nil,
 			},
 			setupMocks: func() {
 				idServiceMock.EXPECT().
 					GenerateID().
-					Return(testdata.UserID).
+					Return(data.UserID).
 					Times(1)
 
 				hashServiceMock.EXPECT().
-					Hash(testdata.Password).
-					Return(testdata.HashedPassword, nil).
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
 					Times(1)
 			},
 		},

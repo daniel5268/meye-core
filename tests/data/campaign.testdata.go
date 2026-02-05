@@ -1,4 +1,4 @@
-package testdata
+package data
 
 import (
 	"meye-core/internal/domain/campaign"
@@ -30,7 +30,7 @@ func Campaign(t *testing.T) *campaign.Campaign {
 		[]campaign.PJ{},
 	)
 
-	_, _ = c.InviteUser(User(t), idServ)
+	_, _ = c.InviteUser(UserID, idServ)
 
 	return c
 }

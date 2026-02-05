@@ -1,14 +1,18 @@
 package hash
 
 import (
+	"meye-core/internal/domain/user"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 const cost = 12
 
+var _ user.HashService = (*Service)(nil)
+
 type Service struct{}
 
-func NewService() *Service {
+func New() *Service {
 	return &Service{}
 }
 

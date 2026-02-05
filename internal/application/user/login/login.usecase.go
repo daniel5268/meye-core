@@ -15,7 +15,7 @@ type UseCase struct {
 	jwtService     domainuser.JWTService
 }
 
-func NewUseCase(userRepo domainuser.Repository, hashServ domainuser.HashService, jwtServ domainuser.JWTService) *UseCase {
+func New(userRepo domainuser.Repository, hashServ domainuser.HashService, jwtServ domainuser.JWTService) *UseCase {
 	return &UseCase{
 		userRepository: userRepo,
 		hashService:    hashServ,

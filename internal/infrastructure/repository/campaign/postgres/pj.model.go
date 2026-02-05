@@ -31,24 +31,24 @@ func (s *SupernaturalStatsJSON) Scan(value interface{}) error {
 }
 
 type PJ struct {
-	ID            string `gorm:"primaryKey"`
-	CampaignID    string
-	UserID        string
-	Name          string
-	Weight        uint
-	Height        uint
-	Age           uint
-	Look          uint
-	Charisma      int
-	Villainy uint
-	Heroism  uint
-	PjType   campaign.PJType `gorm:"column:pj_type"`
+	ID         string `gorm:"primaryKey"`
+	CampaignID string
+	UserID     string
+	Name       string
+	Weight     uint
+	Height     uint
+	Age        uint
+	Look       uint
+	Charisma   int
+	Villainy   uint
+	Heroism    uint
+	PjType     campaign.PJType `gorm:"column:pj_type"`
 
 	// Basic Stats - Physical
-	Strength          uint
-	Agility           uint
-	Speed             uint
-	Resistance        uint
+	Strength           uint
+	Agility            uint
+	Speed              uint
+	Resistance         uint
 	IsPhysicalTalented bool `gorm:"column:is_physical_talented"`
 
 	// Basic Stats - Mental
@@ -59,34 +59,36 @@ type PJ struct {
 	IsMentalTalented bool `gorm:"column:is_mental_talented"`
 
 	// Basic Stats - Coordination
-	Precision            uint
-	Calculation          uint
-	Range                uint
-	Reflexes             uint
+	Precision              uint
+	Calculation            uint
+	Range                  uint
+	Reflexes               uint
 	IsCoordinationTalented bool `gorm:"column:is_coordination_talented"`
 
 	// Basic Stats - Life
 	Life uint
 
 	// Special Stats - Physical
-	Empowerment               uint
-	VitalControl              uint `gorm:"column:vital_control"`
-	IsPhysicalSkillsTalented  bool `gorm:"column:is_physical_skills_talented"`
+	Empowerment              uint
+	VitalControl             uint `gorm:"column:vital_control"`
+	IsPhysicalSkillsTalented bool `gorm:"column:is_physical_skills_talented"`
 
 	// Special Stats - Mental
-	Ilusion                 uint
-	MentalControl           uint `gorm:"column:mental_control"`
-	IsMentalSkillsTalented  bool `gorm:"column:is_mental_skills_talented"`
+	Ilusion                uint
+	MentalControl          uint `gorm:"column:mental_control"`
+	IsMentalSkillsTalented bool `gorm:"column:is_mental_skills_talented"`
 
 	// Special Stats - Energy
-	ObjectHandling          uint `gorm:"column:object_handling"`
-	EnergyHandling          uint `gorm:"column:energy_handling"`
-	EnergyTank              uint `gorm:"column:energy_tank"`
-	IsEnergySkillsTalented  bool `gorm:"column:is_energy_skills_talented"`
-	IsEnergyTalented        bool `gorm:"column:is_energy_talented"`
+	ObjectHandling         uint                   `gorm:"column:object_handling"`
+	EnergyHandling         uint                   `gorm:"column:energy_handling"`
+	EnergyTank             uint                   `gorm:"column:energy_tank"`
+	IsEnergySkillsTalented bool                   `gorm:"column:is_energy_skills_talented"`
+	IsEnergyTalented       bool                   `gorm:"column:is_energy_talented"`
+	SupernaturalStats      *SupernaturalStatsJSON `gorm:"type:jsonb"`
 
-	// Supernatural Stats (nullable)
-	SupernaturalStats *SupernaturalStatsJSON `gorm:"type:jsonb"`
+	XPBasic        uint `gorm:"column:xp_basic"`
+	XPSpecial      uint `gorm:"column:xp_special"`
+	XPSupernatural uint `gorm:"column:xp_supernatural"`
 
 	CreatedAt time.Time `gorm:"default:current_timestamp"`
 	UpdatedAt time.Time `gorm:"default:current_timestamp"`
@@ -147,6 +149,10 @@ func GetModelFromDomainPJ(pj *campaign.PJ, campaignID string) *PJ {
 		EnergyTank:             pj.SpecialStats().EnergyTank(),
 		IsEnergySkillsTalented: pj.SpecialStats().Energy().IsTalented(),
 		IsEnergyTalented:       pj.SpecialStats().IsEnergyTalented(),
+
+		XPBasic:        pj.XP().Basic(),
+		XPSpecial:      pj.XP().Special(),
+		XPSupernatural: pj.XP().Supernatural(),
 	}
 
 	// Handle supernatural stats if present
@@ -242,6 +248,12 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		supernaturalStats = campaign.CreateSupernaturalStatsWithoutValidation(skills)
 	}
 
+	xp := campaign.CreateXPWithoutValidation(
+		pj.XPBasic,
+		pj.XPSpecial,
+		pj.XPSupernatural,
+	)
+
 	return campaign.CreatePJWithoutValidation(
 		pj.ID,
 		pj.UserID,
@@ -257,5 +269,6 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 		basicStats,
 		specialStats,
 		supernaturalStats,
+		xp,
 	)
 }

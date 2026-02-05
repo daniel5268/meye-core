@@ -8,6 +8,8 @@ import (
 	"meye-core/internal/application/campaign/createcampaign"
 	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/inviteuser"
+	"meye-core/internal/application/session"
+	"meye-core/internal/application/session/createsession"
 	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/application/user/login"
@@ -18,6 +20,7 @@ import (
 	"meye-core/internal/infrastructure/identification"
 	"meye-core/internal/infrastructure/jwt"
 	postgresCampaignRepo "meye-core/internal/infrastructure/repository/campaign/postgres"
+	postgresSessionRepo "meye-core/internal/infrastructure/repository/session/postgres"
 	postgresUserRepo "meye-core/internal/infrastructure/repository/user/postgres"
 
 	"github.com/joho/godotenv"
@@ -37,14 +40,20 @@ type CampaignUseCases struct {
 	CreatePJ       campaign.CreatePJUseCase
 }
 
+type SessionUseCases struct {
+	CreateSession session.CreateSessionUseCase
+}
+
 type UseCases struct {
 	User     *UserUseCases
 	Campaign *CampaignUseCases
+	Session  *SessionUseCases
 }
 
 type Repositories struct {
 	User     *postgresUserRepo.Repository
 	Campaign *postgresCampaignRepo.Repository
+	Session  *postgresSessionRepo.Repository
 }
 
 type Services struct {
@@ -129,9 +138,9 @@ func NewDependencyContainer() (*DependencyContainer, error) {
 
 func (c *DependencyContainer) initializeServices() {
 	c.Services = &Services{
-		Hash:           hash.NewService(),
-		Identification: identification.NewService(),
-		JWT:            jwt.NewService(c.Config.JWT.Secret, c.Config.JWT.Issuer, c.Config.JWT.ExpirationTime),
+		Hash:           hash.New(),
+		Identification: identification.New(),
+		JWT:            jwt.New(c.Config.JWT.Secret, c.Config.JWT.Issuer, c.Config.JWT.ExpirationTime),
 	}
 }
 
@@ -139,47 +148,64 @@ func (c *DependencyContainer) initializeRepositories() {
 	c.Repositories = &Repositories{
 		User:     postgresUserRepo.New(c.Database),
 		Campaign: postgresCampaignRepo.New(c.Database),
+		Session:  postgresSessionRepo.New(c.Database),
 	}
 }
 
 func (c *DependencyContainer) initializeUseCases() {
 	c.UseCases = &UseCases{
 		User: &UserUseCases{
-			CreateUser: createuser.NewUseCase(
+			CreateUser: createuser.New(
 				c.Repositories.User,
 				c.Services.Identification,
 				c.Services.Hash,
 			),
-			Login: login.NewUseCase(
+			Login: login.New(
 				c.Repositories.User,
 				c.Services.Hash,
 				c.Services.JWT,
 			),
 		},
 		Campaign: &CampaignUseCases{
-			CreateCampaign: createcampaign.NewUseCase(
+			CreateCampaign: createcampaign.New(
 				c.Repositories.Campaign,
 				c.Services.Identification,
 			),
-			InviteUser: inviteuser.NewInviteUserUseCase(
-				c.Repositories.Campaign,
-				c.Repositories.User,
-				c.Services.Identification,
-			),
-			CreatePJ: createpj.NewCreatePJUseCase(
+			InviteUser: inviteuser.New(
 				c.Repositories.Campaign,
 				c.Repositories.User,
 				c.Services.Identification,
 			),
+			CreatePJ: createpj.New(
+				c.Repositories.Campaign,
+				c.Repositories.User,
+				c.Services.Identification,
+			),
+		},
+		Session: &SessionUseCases{
+			CreateSession: createsession.New(c.Repositories.Session, c.Repositories.Campaign, c.Services.Identification),
 		},
 	}
 }
 
 func (c *DependencyContainer) initializeHandlers() {
 	c.Handlers = &Handlers{
-		User:     handler.NewUserHandler(c.UseCases.User.CreateUser, c.UseCases.User.Login),
-		Auth:     handler.NewAuthHandler(c.Config.Api.ApiKey, *c.Services.JWT, c.Repositories.User, c.Repositories.Campaign),
-		Campaign: handler.NewCampaignHandler(c.UseCases.Campaign.CreateCampaign, c.UseCases.Campaign.InviteUser, c.UseCases.Campaign.CreatePJ),
+		User: handler.NewUserHandler(
+			c.UseCases.User.CreateUser,
+			c.UseCases.User.Login,
+		),
+		Auth: handler.NewAuthHandler(
+			c.Config.Api.ApiKey,
+			c.Services.JWT,
+			c.Repositories.User,
+			c.Repositories.Campaign,
+		),
+		Campaign: handler.NewCampaignHandler(
+			c.UseCases.Campaign.CreateCampaign,
+			c.UseCases.Campaign.InviteUser,
+			c.UseCases.Campaign.CreatePJ,
+			c.UseCases.Session.CreateSession,
+		),
 	}
 }
 

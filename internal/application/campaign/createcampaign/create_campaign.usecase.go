@@ -15,7 +15,7 @@ type UseCase struct {
 	identificationService shared.IdentificationService
 }
 
-func NewUseCase(campaignRepository domaincampaign.Repository, identificationService shared.IdentificationService) *UseCase {
+func New(campaignRepository domaincampaign.Repository, identificationService shared.IdentificationService) *UseCase {
 	return &UseCase{
 		campaignRepository:    campaignRepository,
 		identificationService: identificationService,

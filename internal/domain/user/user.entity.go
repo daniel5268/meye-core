@@ -50,3 +50,11 @@ func CreateUserWithoutValidation(id, username, password string, role UserRole) *
 		hashedPassword: password,
 	}
 }
+
+func (u *User) MustBePlayer() error {
+	if u.role != UserRolePlayer {
+		return ErrUserNotPlayer
+	}
+
+	return nil
+}

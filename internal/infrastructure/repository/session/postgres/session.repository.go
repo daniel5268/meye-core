@@ -1,0 +1,62 @@
+// infrastructure/repository/session/postgres/session.repository.go
+package postgres
+
+import (
+	"context"
+	"meye-core/internal/domain/event"
+	"meye-core/internal/domain/session"
+	"meye-core/internal/infrastructure/repository/shared"
+
+	"gorm.io/gorm"
+)
+
+var _ session.Repository = (*Repository)(nil)
+
+type Repository struct {
+	db *gorm.DB
+}
+
+func New(db *gorm.DB) *Repository {
+	return &Repository{db: db}
+}
+
+func (r *Repository) Save(ctx context.Context, s *session.Session) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		sessionModel := GetModelFromDomainSession(s)
+
+		if err := tx.Create(sessionModel).Error; err != nil {
+			return err
+		}
+
+		events := s.UncommittedEvents()
+		for _, evt := range events {
+			eventModel := shared.DomainEvent{
+				ID:            evt.ID(),
+				UserID:        evt.UserID(),
+				Type:          string(evt.Type()),
+				AggregateType: string(evt.AggregateType()),
+				AggregateID:   evt.AggregateID(),
+				Data:          extractEventData(evt),
+				CreatedAt:     evt.CreatedAt(),
+				OccurredAt:    evt.OccurredAt(),
+			}
+
+			if err := tx.Create(&eventModel).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func extractEventData(evt event.DomainEvent) shared.EventData {
+	data := make(shared.EventData)
+
+	switch e := evt.(type) {
+	case session.SessionCreatedEvent:
+		data["campaign_id"] = e.CampaignID()
+	}
+
+	return data
+}
