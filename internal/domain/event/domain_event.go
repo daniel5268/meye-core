@@ -7,12 +7,14 @@ type EventType string
 // Session Events
 const (
 	EventTypeSessionCreated EventType = "session_created"
+	EventTypeXPAssigned     EventType = "xp_assigned"
 )
 
 type AggregateType string
 
 const (
 	AggregateTypeSession AggregateType = "session"
+	AggregateTypePJ      AggregateType = "pj"
 )
 
 type DomainEvent interface {

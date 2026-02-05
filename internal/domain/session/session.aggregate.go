@@ -53,8 +53,13 @@ func NewSession(masterID, campID string, summary string, xpAssignations []XPAssi
 	}
 
 	createdEvent := newSessionCreatedEvent(s, masterID, idServ)
-
 	s.addUncommitedEvent(createdEvent)
+
+	// Create XPAssignedEvent for each XP assignation
+	for _, xpAssignation := range xpAssignations {
+		xpAssignedEvent := newXPAssignedEvent(xpAssignation, s.id, s.createdAt, masterID, idServ)
+		s.addUncommitedEvent(xpAssignedEvent)
+	}
 
 	return s, nil
 }

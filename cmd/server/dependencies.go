@@ -19,6 +19,7 @@ import (
 	"meye-core/internal/infrastructure/hash"
 	"meye-core/internal/infrastructure/identification"
 	"meye-core/internal/infrastructure/jwt"
+	"meye-core/internal/infrastructure/messaging/rabbitmq"
 	postgresCampaignRepo "meye-core/internal/infrastructure/repository/campaign/postgres"
 	postgresSessionRepo "meye-core/internal/infrastructure/repository/session/postgres"
 	postgresUserRepo "meye-core/internal/infrastructure/repository/user/postgres"
@@ -60,6 +61,7 @@ type Services struct {
 	Hash           *hash.Service
 	Identification *identification.Service
 	JWT            *jwt.Service
+	EventPublisher *rabbitmq.Publisher
 }
 
 type Handlers struct {
@@ -112,6 +114,17 @@ func (c *DependencyContainer) connectDatabase() error {
 	return nil
 }
 
+func (c *DependencyContainer) connectRabbitMQ() error {
+	publisher, err := rabbitmq.New(c.Config.RabbitMQ.URL, c.Config.RabbitMQ.EventsQueue)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
+
+	c.Services.EventPublisher = publisher
+
+	return nil
+}
+
 func NewDependencyContainer() (*DependencyContainer, error) {
 	container := &DependencyContainer{}
 
@@ -128,6 +141,11 @@ func NewDependencyContainer() (*DependencyContainer, error) {
 	}
 
 	container.initializeServices()
+
+	if err := container.connectRabbitMQ(); err != nil {
+		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
+
 	container.initializeRepositories()
 	container.initializeUseCases()
 	container.initializeHandlers()
@@ -183,7 +201,7 @@ func (c *DependencyContainer) initializeUseCases() {
 			),
 		},
 		Session: &SessionUseCases{
-			CreateSession: createsession.New(c.Repositories.Session, c.Repositories.Campaign, c.Services.Identification),
+			CreateSession: createsession.New(c.Repositories.Session, c.Repositories.Campaign, c.Services.Identification, c.Services.EventPublisher),
 		},
 	}
 }
@@ -220,6 +238,13 @@ func (c *DependencyContainer) initializeRouter() {
 
 // Close gracefully closes all resources
 func (c *DependencyContainer) Close() error {
+	if c.Services != nil && c.Services.EventPublisher != nil {
+		if err := c.Services.EventPublisher.Close(); err != nil {
+			logrus.Errorf("Failed to close RabbitMQ connection: %v", err)
+			return err
+		}
+	}
+
 	if c.Database != nil {
 		if sqlDB, err := c.Database.DB(); err == nil {
 			if err := sqlDB.Close(); err != nil {

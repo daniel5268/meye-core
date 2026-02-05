@@ -46,6 +46,13 @@ meye-core/
 │   │   │   ├── calculations_supernatural.go  # Supernatural stats XP
 │   │   │   ├── errors.go
 │   │   │   └── *_test.go                     # Domain tests
+│   │   ├── session/
+│   │   │   ├── session.aggregate.go          # Aggregate root
+│   │   │   ├── events.go                     # Domain events
+│   │   │   └── session.repository.port.go
+│   │   ├── event/
+│   │   │   ├── domain_event.go               # Domain event interface
+│   │   │   └── event_publisher.port.go       # Event publisher port
 │   │   └── shared/
 │   │       └── identification.service.port.go
 │   │
@@ -58,14 +65,22 @@ meye-core/
 │   │   │   │   └── create_user.usecase.go
 │   │   │   └── login/
 │   │   │       └── login.usecase.go
-│   │   └── campaign/
+│   │   ├── campaign/
+│   │   │   ├── ports.go
+│   │   │   ├── dto.go
+│   │   │   ├── errors.go
+│   │   │   ├── createcampaign/
+│   │   │   │   └── create_campaign.usecase.go
+│   │   │   ├── inviteuser/
+│   │   │   │   └── invite_user.usecase.go
+│   │   │   └── createpj/
+│   │   │       └── create_pj.usecase.go
+│   │   └── session/
 │   │       ├── ports.go
 │   │       ├── dto.go
 │   │       ├── errors.go
-│   │       ├── createcampaign/
-│   │       │   └── create_campaign.usecase.go
-│   │       └── inviteuser/
-│   │           └── invite_user.usecase.go
+│   │       └── createsession/
+│   │           └── create_session.usecase.go
 │   │
 │   ├── infrastructure/                # Infrastructure Layer (Adapters)
 │   │   ├── api/
@@ -84,11 +99,19 @@ meye-core/
 │   │   │   ├── user/postgres/
 │   │   │   │   ├── user.repository.go
 │   │   │   │   └── user.model.go      # Database model
-│   │   │   └── campaign/postgres/
-│   │   │       ├── campaign.repository.go
-│   │   │       ├── campaign.model.go
-│   │   │       ├── campaign_invitation.model.go
-│   │   │       └── campaign_pj.model.go
+│   │   │   ├── campaign/postgres/
+│   │   │   │   ├── campaign.repository.go
+│   │   │   │   ├── campaign.model.go
+│   │   │   │   ├── campaign_invitation.model.go
+│   │   │   │   └── campaign_pj.model.go
+│   │   │   ├── session/postgres/
+│   │   │   │   ├── session.repository.go
+│   │   │   │   └── session.model.go
+│   │   │   └── shared/
+│   │   │       └── event.model.go     # Shared event model
+│   │   ├── messaging/
+│   │   │   └── rabbitmq/
+│   │   │       └── event_publisher.go # RabbitMQ event publisher
 │   │   ├── hash/
 │   │   │   └── hash.service.go        # Bcrypt implementation
 │   │   ├── jwt/
@@ -119,6 +142,7 @@ meye-core/
 │   └── 004_update_pjs_talents_system.down.sql
 │
 ├── .env.example                       # Environment variables template
+├── compose.yml                        # Docker Compose for infrastructure
 ├── go.mod
 └── go.sum
 ```
@@ -267,6 +291,131 @@ The repository handles the entire aggregate atomically:
 
 ---
 
+### Session Domain
+
+The session domain manages game sessions and XP assignment to player characters.
+
+#### Aggregate Root: Session
+
+**Entity: Session** (`session.aggregate.go`)
+- Properties: `id`, `campaignID`, `summary`, `createdAt`, `xpAssignations[]`, `uncommitedEvents[]`
+- Methods:
+  - `NewSession(masterID, campaignID, summary, xpAssignations, idServ) -> *Session` - creates session with events
+  - `UncommittedEvents() -> []event.DomainEvent` - returns domain events to be published
+
+**Value Objects**:
+- `XPAmounts`: basic, special, superNatural (private fields with getters)
+- `XPAssignation`: pjID, amounts, reason
+
+**Business Rules**:
+- Sessions track game progress and XP distribution
+- Each session creates domain events for event-driven communication
+- XP assignations validated against campaign's PJs
+
+**Repository Port**: `Save(ctx, session)` - persists session and all events atomically
+
+---
+
+#### Domain Events
+
+The session domain implements event sourcing patterns with domain events.
+
+**Domain Event Interface** (`event/domain_event.go`):
+```go
+type DomainEvent interface {
+    ID() string
+    UserID() string
+    Type() EventType
+    AggregateID() string
+    AggregateType() AggregateType
+    CreatedAt() time.Time    // When event was created
+    OccurredAt() time.Time   // When action occurred
+}
+```
+
+**Event Types**:
+1. **SessionCreatedEvent**
+   - Aggregate type: `session`
+   - Aggregate ID: session ID
+   - Data: campaign ID
+   - Occurred at: session creation time
+
+2. **XPAssignedEvent**
+   - Aggregate type: `pj` (player character)
+   - Aggregate ID: PJ ID
+   - Data: session ID, assigned XP (basic, special, supernatural)
+   - Occurred at: session creation time
+   - Created for each XP assignation in session
+
+**Event Creation Pattern**:
+- Events created in aggregate during state changes
+- Stored in `uncommitedEvents[]` collection
+- Published after successful persistence
+- All fields immutable with getter methods
+
+**AssignedXP Value Object**:
+- Properties: `basic`, `special`, `supernatural` (private with getters)
+- Encapsulates XP amounts in events
+
+---
+
+### Event-Driven Architecture
+
+The system implements event-driven patterns for asynchronous communication.
+
+#### Event Publisher Port
+
+**Port Interface** (`event/event_publisher.port.go`):
+```go
+type Publisher interface {
+    Publish(ctx context.Context, events []DomainEvent) error
+}
+```
+
+**Responsibilities**:
+- Publishes domain events to message queue
+- Enables event-driven communication between bounded contexts
+- Supports eventual consistency patterns
+
+---
+
+#### RabbitMQ Implementation
+
+**Publisher** (`infrastructure/messaging/rabbitmq/event_publisher.go`):
+
+**Configuration**:
+- Durable queue for message persistence
+- Persistent messages (survive broker restart)
+- Immediate consumption queue (no delays)
+- JSON message format
+
+**EventMessage Structure**:
+```go
+type EventMessage struct {
+    ID            string
+    UserID        string
+    Type          string
+    AggregateID   string
+    AggregateType string
+    Data          map[string]any
+    CreatedAt     string (ISO 8601)
+    OccurredAt    string (ISO 8601)
+}
+```
+
+**Methods**:
+- `New(url, queueName) -> *Publisher` - initializes connection and declares queue
+- `Publish(ctx, events) -> error` - publishes batch of events
+- `Close() -> error` - gracefully closes connection
+
+**Connection Management**:
+- Establishes AMQP connection on initialization
+- Opens dedicated channel for publishing
+- Declares queue (idempotent operation)
+- Cleanup via Close() method
+
+---
+
 ## Application Layer
 
 ### Use Case Pattern
@@ -362,6 +511,42 @@ func (u *UseCase) Execute(ctx context.Context, input applicationuser.CreateUserI
      5. Return invitation output
    - Errors: `ErrCampaignNotFound`, `ErrUserNotFound`, `ErrUserNotPlayer`
 
+3. **CreatePJ** (`createpj/create_pj.usecase.go`)
+   - Dependencies: campaignRepository, userRepository, identificationService
+   - Flow:
+     1. Find campaign by ID
+     2. Find user by ID
+     3. Validate user has pending invitation
+     4. Call campaign.AddPJ() (creates PJ and accepts invitation)
+     5. Save campaign aggregate
+     6. Return PJ output
+   - Errors: `ErrCampaignNotFound`, `ErrUserNotFound`, `ErrUserNotInvited`
+
+---
+
+#### Session Use Cases
+
+1. **CreateSession** (`createsession/create_session.usecase.go`)
+   - Dependencies: sessionRepository, campaignRepository, identificationService, eventPublisher
+   - Flow:
+     1. Find campaign by ID
+     2. Extract PJ IDs from XP assignations
+     3. Validate all PJ IDs exist in campaign
+     4. Create session aggregate (generates domain events)
+     5. Save session to repository (persists events to database)
+     6. Publish uncommitted events to RabbitMQ
+     7. Return session output
+   - Events Created:
+     - 1 `SessionCreatedEvent` (per session)
+     - N `XPAssignedEvent` (one per PJ receiving XP)
+   - Errors: `ErrCampaignNotFound`, domain validation errors
+
+**Event Publishing Pattern**:
+- Events generated during aggregate creation
+- Events persisted in database (event store pattern)
+- Events published to message queue after successful persistence
+- Enables event-driven consumers to react asynchronously
+
 ---
 
 ## Infrastructure Layer
@@ -388,6 +573,8 @@ type Router struct {
 - `POST /api/v1/users` - Create user (requires admin role)
 - `POST /api/v1/campaigns` - Create campaign (requires master role)
 - `POST /api/v1/campaigns/:campaignID/invitations` - Invite user (requires campaign master)
+- `POST /api/v1/campaigns/:campaignID/pjs` - Create PJ (requires user invitation)
+- `POST /api/v1/campaigns/:campaignID/sessions` - Create session (requires campaign master)
 
 ---
 
@@ -525,6 +712,34 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 
 ---
 
+#### Session Repository (`repository/session/postgres/`)
+
+**Models**:
+1. `Session`: id, campaign_id, summary, timestamps
+2. `DomainEvent` (shared): id, user_id, type, aggregate_type, aggregate_id, data (JSONB), created_at, occurred_at
+
+**Event Persistence Pattern**:
+```go
+func (r *Repository) Save(ctx context.Context, s *session.Session) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        // 1. Insert session
+        // 2. Insert all uncommitted events to events table
+    })
+}
+```
+
+**Event Data Extraction**:
+- `SessionCreatedEvent` → stores campaign_id in data
+- `XPAssignedEvent` → stores session_id and assigned_xp object in data
+- Generic JSONB storage for extensibility
+
+**Event Store Pattern**:
+- All domain events persisted in shared `domain_events` table
+- Enables event sourcing and audit trail
+- Events stored with full metadata (aggregate info, timestamps, data)
+
+---
+
 ### Service Implementations
 
 1. **HashService** (`infrastructure/hash/`)
@@ -540,6 +755,13 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
    - Implementation: Google UUID (v4)
    - `GenerateID()` - returns UUID as string
 
+4. **EventPublisher** (`infrastructure/messaging/rabbitmq/`)
+   - Implementation: RabbitMQ (AMQP 0.9.1)
+   - `Publish(ctx, events)` - publishes domain events to queue
+   - `Close()` - gracefully closes connection
+   - Queue: durable, persistent messages
+   - Message format: JSON
+
 ---
 
 ## Configuration
@@ -550,6 +772,7 @@ type Config struct {
     Api      ApiConfig
     Database DatabaseConfig
     JWT      JWTConfig
+    RabbitMQ RabbitMQConfig
 }
 ```
 
@@ -560,11 +783,42 @@ type Config struct {
 - `JWT_SECRET` - JWT signing secret
 - `JWT_ISSUER` - JWT issuer claim
 - `JWT_EXPIRATION_TIME` - Token expiration (duration string)
+- `RABBITMQ_URL` - RabbitMQ AMQP connection string
+- `RABBITMQ_EVENTS_QUEUE` - Queue name for domain events
 
 **Loading**:
 - `.env` file for development (godotenv)
 - System environment variables for production
 - Validation: returns error if required fields missing
+
+---
+
+## Infrastructure Services
+
+### Docker Compose (`compose.yml`)
+
+**Services**:
+1. **PostgreSQL**
+   - Image: postgres:16
+   - Port: configurable via `POSTGRES_PORT`
+   - Persistent volume: `postgres_data`
+   - Environment: user, password, database name
+
+2. **RabbitMQ**
+   - Image: rabbitmq:3.12-management-alpine
+   - Ports:
+     - 5672: AMQP protocol
+     - 15672: Management UI
+   - Persistent volume: `rabbitmq_data`
+   - Environment: default user/password
+   - Management UI: http://localhost:15672
+
+**Usage**:
+```bash
+docker compose up -d       # Start services
+docker compose down        # Stop services
+docker compose logs -f     # View logs
+```
 
 ---
 
@@ -600,6 +854,18 @@ type Config struct {
    - Indexes: campaign_id, user_id, pj_type
    - Enums: pj_type
 
+5. **sessions**
+   - Columns: id (PK), campaign_id (FK), summary (text), created_at
+   - Foreign key: campaign_id → campaigns(id) CASCADE
+   - Indexes: campaign_id, created_at
+   - Note: XP assignations stored as events, not in session table
+
+6. **domain_events** (Event Store)
+   - Columns: id (PK), user_id, type, aggregate_type, aggregate_id, data (JSONB), created_at, occurred_at
+   - Indexes: aggregate_id, aggregate_type, type, occurred_at
+   - Purpose: Event sourcing, audit trail, event replay
+   - Data field stores event-specific data (e.g., campaign_id, session_id, assigned_xp)
+
 ---
 
 ## Dependency Injection
@@ -617,15 +883,30 @@ type DependencyContainer struct {
 }
 ```
 
+**Services Struct**:
+```go
+type Services struct {
+    Hash           *hash.Service
+    Identification *identification.Service
+    JWT            *jwt.Service
+    EventPublisher *rabbitmq.Publisher
+}
+```
+
 **Initialization Order**:
 1. `loadEnvironment()` - Load .env file
 2. `loadConfig()` - Parse environment variables
 3. `connectDatabase()` - Connect to Postgres
-4. `initializeServices()` - Create stateless services
-5. `initializeRepositories()` - Create repositories
-6. `initializeUseCases()` - Wire use cases with domain ports
-7. `initializeHandlers()` - Wire handlers with use case ports
-8. `initializeRouter()` - Setup routes and middleware
+4. `initializeServices()` - Create stateless services (hash, JWT, identification)
+5. `connectRabbitMQ()` - Connect to RabbitMQ and initialize event publisher
+6. `initializeRepositories()` - Create repositories
+7. `initializeUseCases()` - Wire use cases with domain ports
+8. `initializeHandlers()` - Wire handlers with use case ports
+9. `initializeRouter()` - Setup routes and middleware
+
+**Cleanup**:
+- `Close()` method closes EventPublisher and Database connections
+- Called on graceful shutdown (SIGINT, SIGTERM)
 
 **Key Pattern**: Use case structs hold interfaces
 ```go
@@ -773,6 +1054,57 @@ router.Use(authHandler.RequireCampaignMaster()) // Step 3: Check ownership
 **Context Passing**: Each middleware enriches Gin context
 - AuthMiddleware: sets UserID
 - Route handlers: retrieve UserID from context
+
+---
+
+### 8. Event-Driven Architecture
+
+**Domain Events**:
+- Immutable records of state changes
+- Created during aggregate mutations
+- Stored in `uncommitedEvents[]` collection
+
+**Event Pattern Flow**:
+1. **Creation**: Aggregate creates events during state changes
+2. **Storage**: Events added to uncommitted events collection
+3. **Persistence**: Repository persists events to database (event store)
+4. **Publication**: Use case publishes events to message queue
+5. **Consumption**: External consumers react asynchronously (not yet implemented)
+
+**Event Publisher Port**:
+- Defined in domain layer (`event.Publisher`)
+- Implemented in infrastructure (RabbitMQ)
+- Injected into use cases via dependency injection
+
+**Benefits**:
+- Decouples bounded contexts
+- Enables asynchronous processing
+- Supports event sourcing patterns
+- Provides audit trail
+- Enables eventual consistency
+
+**Example**:
+```go
+// Use case orchestration
+session := NewSession(...)           // Creates events
+repository.Save(ctx, session)        // Persists events
+eventPublisher.Publish(ctx, events)  // Publishes to queue
+```
+
+---
+
+### 9. Event Sourcing (Partial Implementation)
+
+**Event Store Pattern**:
+- All domain events persisted in `domain_events` table
+- Events stored with full context (aggregate info, data, timestamps)
+- Enables event replay and audit trail
+
+**Current Implementation**:
+- Events persisted to database
+- Events published to message queue
+- Event consumers not yet implemented
+- Could rebuild aggregate state from events (future enhancement)
 
 ---
 
@@ -1020,6 +1352,12 @@ go test -race ./...
 - `github.com/google/uuid` - UUID generation
 - `github.com/joho/godotenv` - Environment variable loading
 
+**Messaging**:
+- `github.com/rabbitmq/amqp091-go` - RabbitMQ client (AMQP 0.9.1)
+
+**Logging**:
+- `github.com/sirupsen/logrus` - Structured logging
+
 ---
 
 ## Key Principles
@@ -1186,6 +1524,54 @@ The project includes a comprehensive XP calculation system for RPG character pro
 
 ---
 
+### Event-Driven Architecture with RabbitMQ
+
+**Purpose**: Enable asynchronous communication and eventual consistency between bounded contexts
+
+**Implementation**:
+1. **Domain Events**: Immutable records of state changes
+   - `SessionCreatedEvent`: tracks session creation
+   - `XPAssignedEvent`: tracks XP assignment to PJs
+
+2. **Dual Write Pattern**:
+   - Events persisted to database (event store)
+   - Events published to RabbitMQ (message queue)
+   - Both operations in use case orchestration
+
+3. **Event Publisher**:
+   - Port defined in domain layer
+   - RabbitMQ adapter in infrastructure
+   - Durable queue with persistent messages
+
+4. **Event Properties**:
+   - All fields private with getter methods
+   - Immutable value objects (e.g., AssignedXP)
+   - Full metadata (aggregate info, timestamps, data)
+
+**Benefits**:
+- Enables microservices communication
+- Supports asynchronous processing
+- Provides audit trail via event store
+- Decouples bounded contexts
+- Future: Event replay and CQRS patterns
+
+**Example Flow**:
+```
+CreateSession Use Case
+  ↓
+1. Session aggregate created → generates events
+2. Repository.Save() → persists session + events to DB
+3. EventPublisher.Publish() → sends events to RabbitMQ
+  ↓
+Future consumers can:
+- Update PJ aggregate with new XP
+- Send notifications
+- Update read models
+- Trigger other workflows
+```
+
+---
+
 ## When to Create New Layers
 
 **New Domain Package**: When adding a distinct business capability
@@ -1212,10 +1598,21 @@ The project includes a comprehensive XP calculation system for RPG character pro
 
 ## Project Status
 
-The project is actively developed with focus on campaign management and character progression features. Recent additions include:
-- PJ (player character) entity with complex stat system
-- XP calculation system for character progression
-- Invitation workflow for campaign management
-- Aggregate pattern implementation for campaign persistence
+The project is actively developed with focus on campaign management, character progression, and event-driven architecture. Recent additions include:
+- **Session Management**: Session aggregate for tracking game sessions
+- **XP Assignment**: XP distribution to player characters with event tracking
+- **Event-Driven Architecture**: Domain events with RabbitMQ integration
+- **Event Sourcing**: Events persisted to database for audit and potential replay
+- **PJ (player character)**: Complex stat system with 40+ fields
+- **XP Calculation System**: Sophisticated progression mechanics with talent multipliers
+- **Multi-Talent System**: Flexible character builds with independent talent flags
+- **Invitation Workflow**: Campaign access control and player onboarding
+- **Aggregate Pattern**: Complex persistence for campaigns with child entities
 
-The architecture is well-established and follows clean architecture principles with clear boundaries between layers.
+**Infrastructure**:
+- PostgreSQL for relational data
+- RabbitMQ for event-driven messaging
+- Docker Compose for local development
+- Event store pattern for domain events
+
+The architecture is well-established and follows clean architecture principles with clear boundaries between layers. The system now supports event-driven communication patterns, enabling future microservices and asynchronous processing capabilities.
