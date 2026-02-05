@@ -56,6 +56,14 @@ func extractEventData(evt event.DomainEvent) shared.EventData {
 	switch e := evt.(type) {
 	case session.SessionCreatedEvent:
 		data["campaign_id"] = e.CampaignID()
+	case session.XPAssignedEvent:
+		data["session_id"] = e.SessionID()
+		assignedXP := e.AssignedXP()
+		data["assigned_xp"] = map[string]any{
+			"basic":        assignedXP.Basic(),
+			"special":      assignedXP.Special(),
+			"supernatural": assignedXP.Supernatural(),
+		}
 	}
 
 	return data

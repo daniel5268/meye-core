@@ -21,10 +21,16 @@ type JWT struct {
 	ExpirationTime time.Duration
 }
 
+type RabbitMQ struct {
+	URL         string
+	EventsQueue string
+}
+
 type Config struct {
 	Api      Api
 	Database Database
 	JWT      JWT
+	RabbitMQ RabbitMQ
 }
 
 func getInvalidVarErr(varName string) error {
@@ -74,6 +80,20 @@ func (cfg *Config) loadJWT() error {
 	return nil
 }
 
+func (cfg *Config) loadRabbitMQ() error {
+	cfg.RabbitMQ.URL = os.Getenv("RABBITMQ_URL")
+	if cfg.RabbitMQ.URL == "" {
+		return getInvalidVarErr("RABBITMQ_URL")
+	}
+
+	cfg.RabbitMQ.EventsQueue = os.Getenv("RABBITMQ_EVENTS_QUEUE")
+	if cfg.RabbitMQ.EventsQueue == "" {
+		return getInvalidVarErr("RABBITMQ_EVENTS_QUEUE")
+	}
+
+	return nil
+}
+
 // New loads configuration from environment and returns the structure.
 func New() (*Config, error) {
 	cfg := &Config{}
@@ -87,6 +107,10 @@ func New() (*Config, error) {
 	}
 
 	if err := cfg.loadJWT(); err != nil {
+		return nil, err
+	}
+
+	if err := cfg.loadRabbitMQ(); err != nil {
 		return nil, err
 	}
 

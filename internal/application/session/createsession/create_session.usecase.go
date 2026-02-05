@@ -4,6 +4,7 @@ import (
 	"context"
 	applicationsession "meye-core/internal/application/session"
 	"meye-core/internal/domain/campaign"
+	"meye-core/internal/domain/event"
 	domainsession "meye-core/internal/domain/session"
 	"meye-core/internal/domain/shared"
 )
@@ -14,13 +15,15 @@ type UseCase struct {
 	sessionRepository     domainsession.Repository
 	campaignRepository    campaign.Repository
 	identificationService shared.IdentificationService
+	eventPublisher        event.Publisher
 }
 
-func New(sessRepo domainsession.Repository, campRepo campaign.Repository, idServ shared.IdentificationService) *UseCase {
+func New(sessRepo domainsession.Repository, campRepo campaign.Repository, idServ shared.IdentificationService, eventPub event.Publisher) *UseCase {
 	return &UseCase{
 		sessionRepository:     sessRepo,
 		campaignRepository:    campRepo,
 		identificationService: idServ,
+		eventPublisher:        eventPub,
 	}
 }
 
@@ -55,6 +58,12 @@ func (uc *UseCase) Execute(ctx context.Context, input applicationsession.CreateS
 	}
 
 	err = uc.sessionRepository.Save(ctx, session)
+	if err != nil {
+		return applicationsession.SessionOutput{}, err
+	}
+
+	// Publish uncommitted events to message queue
+	err = uc.eventPublisher.Publish(ctx, session.UncommittedEvents())
 	if err != nil {
 		return applicationsession.SessionOutput{}, err
 	}
