@@ -23,7 +23,7 @@ func User(t *testing.T) *user.User {
 	idServ := mocks.NewMockIdentificationService(ctrl)
 	hashServ := mocks.NewMockHashService(ctrl)
 
-	idServ.EXPECT().GenerateID().Return(UserID)
+	idServ.EXPECT().GenerateID().Return(UserID).Times(2)
 	hashServ.EXPECT().Hash(Password).Return(HashedPassword, nil)
 
 	u, _ := user.NewUser(Username, Password, Role, idServ, hashServ)

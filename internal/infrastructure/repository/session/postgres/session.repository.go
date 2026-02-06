@@ -28,25 +28,9 @@ func (r *Repository) Save(ctx context.Context, s *session.Session) error {
 			return err
 		}
 
-		events := s.UncommittedEvents()
-		for _, evt := range events {
-			eventModel := shared.DomainEvent{
-				ID:            evt.ID(),
-				UserID:        evt.UserID(),
-				Type:          string(evt.Type()),
-				AggregateType: string(evt.AggregateType()),
-				AggregateID:   evt.AggregateID(),
-				Data:          extractEventData(evt),
-				CreatedAt:     evt.CreatedAt(),
-				OccurredAt:    evt.OccurredAt(),
-			}
+		events := getUncommittedEvents(s)
 
-			if err := tx.Create(&eventModel).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return tx.Create(&events).Error
 	})
 }
 
@@ -67,4 +51,24 @@ func extractEventData(evt event.DomainEvent) shared.EventData {
 	}
 
 	return data
+}
+
+func getUncommittedEvents(s *session.Session) []shared.DomainEvent {
+	events := s.UncommittedEvents()
+	domainEvents := make([]shared.DomainEvent, 0, len(events))
+	for _, evt := range events {
+		eventModel := shared.DomainEvent{
+			ID:            evt.ID(),
+			Type:          string(evt.Type()),
+			AggregateType: string(evt.AggregateType()),
+			AggregateID:   evt.AggregateID(),
+			Data:          extractEventData(evt),
+			CreatedAt:     evt.CreatedAt(),
+			OccurredAt:    evt.OccurredAt(),
+		}
+
+		domainEvents = append(domainEvents, eventModel)
+	}
+
+	return domainEvents
 }

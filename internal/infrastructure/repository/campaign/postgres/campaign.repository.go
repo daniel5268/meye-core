@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"meye-core/internal/domain/campaign"
+	"meye-core/internal/domain/event"
+	"meye-core/internal/infrastructure/repository/shared"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -22,6 +25,10 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*campaign.Campaig
 	var campaignModel Campaign
 	result := r.db.Where("id = ?", id).First(&campaignModel)
 	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
 		return nil, result.Error
 	}
 
@@ -64,7 +71,7 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 
 		// Insert or update invitations
 		for _, domainInvitation := range domainInvitations {
-			invitationModel := GetModelFromDomainInvitation(&domainInvitation)
+			invitationModel := GetModelFromDomainInvitation(domainInvitation)
 			newInvitationIDs[invitationModel.ID] = true
 
 			result := tx.Clauses(clause.OnConflict{
@@ -107,7 +114,7 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 
 		// Insert or update PJs
 		for _, domainPJ := range domainPJs {
-			pjModel := GetModelFromDomainPJ(&domainPJ, c.ID())
+			pjModel := GetModelFromDomainPJ(domainPJ, c.ID())
 			newPjIDs[pjModel.ID] = true
 
 			result := tx.Clauses(clause.OnConflict{
@@ -180,6 +187,42 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 			}
 		}
 
-		return nil
+		events := getUncommittedEvents(c)
+
+		return tx.Create(&events).Error
+
 	})
+}
+
+func extractEventData(evt event.DomainEvent) shared.EventData {
+	data := make(shared.EventData)
+
+	switch e := evt.(type) {
+	case campaign.UserInvitedEvent:
+		data["campaign_id"] = e.CampaignID()
+	case campaign.PjAddedEvent:
+		data["campaign_id"] = e.CampaignID()
+	}
+
+	return data
+}
+
+func getUncommittedEvents(c *campaign.Campaign) []shared.DomainEvent {
+	events := c.UncommittedEvents()
+	domainEvents := make([]shared.DomainEvent, 0, len(events))
+	for _, evt := range events {
+		eventModel := shared.DomainEvent{
+			ID:            evt.ID(),
+			Type:          string(evt.Type()),
+			AggregateType: string(evt.AggregateType()),
+			AggregateID:   evt.AggregateID(),
+			Data:          extractEventData(evt),
+			CreatedAt:     evt.CreatedAt(),
+			OccurredAt:    evt.OccurredAt(),
+		}
+
+		domainEvents = append(domainEvents, eventModel)
+	}
+
+	return domainEvents
 }

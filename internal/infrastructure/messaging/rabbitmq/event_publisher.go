@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"meye-core/internal/domain/campaign"
 	"meye-core/internal/domain/event"
 	"meye-core/internal/domain/session"
+	"meye-core/internal/domain/user"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -67,7 +69,6 @@ func New(url, queueName string) (*Publisher, error) {
 // EventMessage represents the structure of the message sent to RabbitMQ
 type EventMessage struct {
 	ID            string         `json:"id"`
-	UserID        string         `json:"user_id"`
 	Type          string         `json:"type"`
 	AggregateID   string         `json:"aggregate_id"`
 	AggregateType string         `json:"aggregate_type"`
@@ -85,7 +86,6 @@ func (p *Publisher) Publish(ctx context.Context, events []event.DomainEvent) err
 	for _, evt := range events {
 		message := EventMessage{
 			ID:            evt.ID(),
-			UserID:        evt.UserID(),
 			Type:          string(evt.Type()),
 			AggregateID:   evt.AggregateID(),
 			AggregateType: string(evt.AggregateType()),
@@ -130,27 +130,26 @@ func (p *Publisher) Publish(ctx context.Context, events []event.DomainEvent) err
 func (p *Publisher) extractEventData(evt event.DomainEvent) map[string]any {
 	data := make(map[string]any)
 
-	switch evt.Type() {
-	case event.EventTypeSessionCreated:
-		if e, ok := evt.(session.SessionCreatedEvent); ok {
-			data["campaign_id"] = e.CampaignID()
+	switch e := evt.(type) {
+	// Session Events.
+	case session.SessionCreatedEvent:
+		data["campaign_id"] = e.CampaignID()
+	case session.XPAssignedEvent:
+		data["session_id"] = e.SessionID()
+		assignedXP := e.AssignedXP()
+		data["assigned_xp"] = map[string]any{
+			"basic":        assignedXP.Basic(),
+			"special":      assignedXP.Special(),
+			"supernatural": assignedXP.Supernatural(),
 		}
-
-		logrus.Info("a")
-
-	case event.EventTypeXPAssigned:
-		if e, ok := evt.(session.XPAssignedEvent); ok {
-			data["session_id"] = e.SessionID()
-
-			xp := e.AssignedXP()
-			data["xp"] = map[string]uint{
-				"basic":        xp.Basic(),
-				"special":      xp.Special(),
-				"supernatural": xp.Supernatural(),
-			}
-		}
-
-		logrus.Info("b")
+	// Campaign Events.
+	case campaign.UserInvitedEvent:
+		data["campaign_id"] = e.CampaignID()
+	case campaign.PjAddedEvent:
+		data["campaign_id"] = e.CampaignID()
+	// User Events.
+	case user.UserCreatedEvent:
+		data["role"] = e.Role()
 	}
 
 	return data

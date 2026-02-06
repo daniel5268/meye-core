@@ -26,8 +26,8 @@ func Campaign(t *testing.T) *campaign.Campaign {
 		CampaignID,
 		CampaignMasterID,
 		CampaignName,
-		[]campaign.Invitation{},
-		[]campaign.PJ{},
+		[]*campaign.Invitation{},
+		[]*campaign.PJ{},
 	)
 
 	_, _ = c.InviteUser(UserID, idServ)
