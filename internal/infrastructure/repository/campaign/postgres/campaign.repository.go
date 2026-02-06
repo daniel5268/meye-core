@@ -114,7 +114,7 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 
 		// Insert or update PJs
 		for _, domainPJ := range domainPJs {
-			pjModel := GetModelFromDomainPJ(domainPJ, c.ID())
+			pjModel := GetModelFromDomainPJ(domainPJ)
 			newPjIDs[pjModel.ID] = true
 
 			result := tx.Clauses(clause.OnConflict{

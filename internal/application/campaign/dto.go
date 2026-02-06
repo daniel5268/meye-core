@@ -143,6 +143,7 @@ type XP struct {
 
 type PJOutput struct {
 	ID                string
+	CampaignID        string
 	UserID            string
 	Name              string
 	Weight            uint
@@ -161,17 +162,18 @@ type PJOutput struct {
 
 func MapPJOutput(pj *campaign.PJ) PJOutput {
 	output := PJOutput{
-		ID:       pj.ID(),
-		UserID:   pj.UserID(),
-		Name:     pj.Name(),
-		Weight:   pj.Weight(),
-		Height:   pj.Height(),
-		Age:      pj.Age(),
-		Look:     pj.Look(),
-		Charisma: pj.Charisma(),
-		Villainy: pj.Villainy(),
-		Heroism:  pj.Heroism(),
-		PJType:   string(pj.Type()),
+		ID:         pj.ID(),
+		CampaignID: pj.CampaignID(),
+		UserID:     pj.UserID(),
+		Name:       pj.Name(),
+		Weight:     pj.Weight(),
+		Height:     pj.Height(),
+		Age:        pj.Age(),
+		Look:       pj.Look(),
+		Charisma:   pj.Charisma(),
+		Villainy:   pj.Villainy(),
+		Heroism:    pj.Heroism(),
+		PJType:     string(pj.Type()),
 		BasicStats: BasicStats{
 			Physical: Physical{
 				Strength:   pj.BasicStats().Physical().Strength(),
@@ -235,4 +237,15 @@ func MapPJOutput(pj *campaign.PJ) PJOutput {
 	}
 
 	return output
+}
+
+type XpAmounts struct {
+	Basic        uint
+	Special      uint
+	Supernatural uint
+}
+
+type ConsumeXpInput struct {
+	PjID string
+	Xp   XpAmounts
 }

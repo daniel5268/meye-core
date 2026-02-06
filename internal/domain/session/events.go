@@ -2,8 +2,9 @@ package session
 
 import (
 	"meye-core/internal/domain/event"
-	"meye-core/internal/domain/shared"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Compile-time check to ensure UseCase implements the port interface
@@ -28,9 +29,9 @@ func (e SessionCreatedEvent) AggregateType() event.AggregateType { return event.
 
 func (e SessionCreatedEvent) CampaignID() string { return e.campaignID }
 
-func newSessionCreatedEvent(s *Session, idServ shared.IdentificationService) SessionCreatedEvent {
+func newSessionCreatedEvent(s *Session) SessionCreatedEvent {
 	return SessionCreatedEvent{
-		id:         idServ.GenerateID(),
+		id:         uuid.NewString(),
 		sessionID:  s.id,
 		createdAt:  time.Now(),
 		occurredAt: s.createdAt,
@@ -70,9 +71,9 @@ func (e XPAssignedEvent) AggregateType() event.AggregateType { return event.Aggr
 func (e XPAssignedEvent) SessionID() string      { return e.sessionID }
 func (e XPAssignedEvent) AssignedXP() AssignedXP { return e.assignedXP }
 
-func newXPAssignedEvent(xpAssignation XPAssignation, sessionID string, sessionCreatedAt time.Time, idServ shared.IdentificationService) XPAssignedEvent {
+func newXPAssignedEvent(xpAssignation XPAssignation, sessionID string, sessionCreatedAt time.Time) XPAssignedEvent {
 	return XPAssignedEvent{
-		id:         idServ.GenerateID(),
+		id:         uuid.NewString(),
 		sessionID:  sessionID,
 		pjID:       xpAssignation.PjID(),
 		createdAt:  time.Now(),

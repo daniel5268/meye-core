@@ -94,10 +94,10 @@ type PJ struct {
 	UpdatedAt time.Time `gorm:"default:current_timestamp"`
 }
 
-func GetModelFromDomainPJ(pj *campaign.PJ, campaignID string) *PJ {
+func GetModelFromDomainPJ(pj *campaign.PJ) *PJ {
 	model := &PJ{
 		ID:         pj.ID(),
-		CampaignID: campaignID,
+		CampaignID: pj.CampaignID(),
 		UserID:     pj.UserID(),
 		Name:       pj.Name(),
 		Weight:     pj.Weight(),
@@ -256,6 +256,7 @@ func (pj *PJ) ToDomain() *campaign.PJ {
 
 	return campaign.CreatePJWithoutValidation(
 		pj.ID,
+		pj.CampaignID,
 		pj.UserID,
 		pj.Name,
 		pj.Weight,
