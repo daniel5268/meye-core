@@ -324,7 +324,6 @@ The session domain implements event sourcing patterns with domain events.
 ```go
 type DomainEvent interface {
     ID() string
-    UserID() string
     Type() EventType
     AggregateID() string
     AggregateType() AggregateType
@@ -393,7 +392,6 @@ type Publisher interface {
 ```go
 type EventMessage struct {
     ID            string
-    UserID        string
     Type          string
     AggregateID   string
     AggregateType string

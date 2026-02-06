@@ -9,7 +9,6 @@ import (
 
 type DomainEvent struct {
 	ID            string
-	UserID        string
 	Type          string
 	AggregateType string
 	AggregateID   string

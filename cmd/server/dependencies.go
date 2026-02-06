@@ -177,6 +177,7 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Repositories.User,
 				c.Services.Identification,
 				c.Services.Hash,
+				c.Services.EventPublisher,
 			),
 			Login: login.New(
 				c.Repositories.User,
@@ -188,20 +189,28 @@ func (c *DependencyContainer) initializeUseCases() {
 			CreateCampaign: createcampaign.New(
 				c.Repositories.Campaign,
 				c.Services.Identification,
+				c.Services.EventPublisher,
 			),
 			InviteUser: inviteuser.New(
 				c.Repositories.Campaign,
 				c.Repositories.User,
 				c.Services.Identification,
+				c.Services.EventPublisher,
 			),
 			CreatePJ: createpj.New(
 				c.Repositories.Campaign,
 				c.Repositories.User,
 				c.Services.Identification,
+				c.Services.EventPublisher,
 			),
 		},
 		Session: &SessionUseCases{
-			CreateSession: createsession.New(c.Repositories.Session, c.Repositories.Campaign, c.Services.Identification, c.Services.EventPublisher),
+			CreateSession: createsession.New(
+				c.Repositories.Session,
+				c.Repositories.Campaign,
+				c.Services.Identification,
+				c.Services.EventPublisher,
+			),
 		},
 	}
 }

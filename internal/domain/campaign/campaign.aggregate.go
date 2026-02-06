@@ -1,30 +1,37 @@
 package campaign
 
 import (
+	"meye-core/internal/domain/event"
 	"meye-core/internal/domain/shared"
 )
 
 type Campaign struct {
-	id          string
-	masterID    string
-	name        string
-	invitations []Invitation
-	pjs         []PJ
+	id                string
+	masterID          string
+	name              string
+	invitations       []*Invitation
+	pjs               []*PJ
+	uncommittedEvents []event.DomainEvent
 }
 
 func NewCampaign(masterID, name string, identificationService shared.IdentificationService) *Campaign {
 	id := identificationService.GenerateID()
 
-	return &Campaign{
+	c := &Campaign{
 		id:       id,
 		masterID: masterID,
 		name:     name,
 	}
+
+	c.uncommittedEvents = append(c.uncommittedEvents, newCampaignCreatedEvent(c, identificationService))
+
+	return c
 }
 
 func (c *Campaign) InviteUser(userID string, identificationService shared.IdentificationService) (*Invitation, error) {
 	invitation := NewInvitation(c.id, userID, identificationService)
-	c.invitations = append(c.invitations, *invitation)
+	c.invitations = append(c.invitations, invitation)
+	c.uncommittedEvents = append(c.uncommittedEvents, newUserInvitedEvent(userID, c.id, identificationService))
 
 	return invitation, nil
 }
@@ -32,7 +39,7 @@ func (c *Campaign) InviteUser(userID string, identificationService shared.Identi
 func (c *Campaign) GetPendingUserInvitation(userID string) *Invitation {
 	for i := range c.invitations {
 		if c.invitations[i].UserID() == userID && c.invitations[i].State() == InvitationStatePending {
-			return &c.invitations[i]
+			return c.invitations[i]
 		}
 	}
 
@@ -104,18 +111,20 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 
 	pj.xp = CreateXPWithoutValidation(0, 0, 0)
 
-	c.pjs = append(c.pjs, *pj)
+	c.pjs = append(c.pjs, pj)
+	c.uncommittedEvents = append(c.uncommittedEvents, newPjAddedEvent(pj.id, c.id, identificationService))
 
 	return pj, nil
 }
 
-func (c *Campaign) ID() string                { return c.id }
-func (c *Campaign) MasterID() string          { return c.masterID }
-func (c *Campaign) Name() string              { return c.name }
-func (c *Campaign) Invitations() []Invitation { return c.invitations }
-func (c *Campaign) PJs() []PJ                 { return c.pjs }
+func (c *Campaign) ID() string                             { return c.id }
+func (c *Campaign) MasterID() string                       { return c.masterID }
+func (c *Campaign) Name() string                           { return c.name }
+func (c *Campaign) Invitations() []*Invitation             { return c.invitations }
+func (c *Campaign) PJs() []*PJ                             { return c.pjs }
+func (c *Campaign) UncommittedEvents() []event.DomainEvent { return c.uncommittedEvents }
 
-func CreateCampaignWithoutValidation(id, masterID, name string, invitations []Invitation, pjs []PJ) *Campaign {
+func CreateCampaignWithoutValidation(id, masterID, name string, invitations []*Invitation, pjs []*PJ) *Campaign {
 	return &Campaign{
 		id:          id,
 		masterID:    masterID,
@@ -128,7 +137,7 @@ func CreateCampaignWithoutValidation(id, masterID, name string, invitations []In
 func (c *Campaign) FindPjByID(pjID string) *PJ {
 	for i := range c.pjs {
 		if c.pjs[i].id == pjID {
-			return &c.pjs[i]
+			return c.pjs[i]
 		}
 	}
 

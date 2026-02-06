@@ -18,6 +18,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 	var idServiceMock *mocks.MockIdentificationService
 	var userRepoMock *mocks.MockUserRepository
 	var hashServiceMock *mocks.MockHashService
+	var publisherMock *mocks.MockPublisher
 
 	type want struct {
 		output applicationuser.UserOutput
@@ -26,7 +27,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 	ctx := context.Background()
 
-	s := createuser.New(userRepoMock, idServiceMock, hashServiceMock)
+	s := createuser.New(userRepoMock, idServiceMock, hashServiceMock, publisherMock)
 
 	errTest := errors.New("mock_err")
 
@@ -57,7 +58,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				idServiceMock.EXPECT().
 					GenerateID().
 					Return(data.UserID).
-					Times(1)
+					Times(2)
 
 				hashServiceMock.EXPECT().
 					Hash(data.Password).
@@ -73,6 +74,11 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 					Save(ctx, gomock.Any()).
 					Return(nil).
 					Times(1)
+
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
+					Return(nil).
+					Times(1)
 			},
 		},
 		{
@@ -86,7 +92,7 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				idServiceMock.EXPECT().
 					GenerateID().
 					Return(data.UserID).
-					Times(1)
+					Times(2)
 
 				hashServiceMock.EXPECT().
 					Hash(data.Password).
@@ -102,6 +108,9 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 					Save(ctx, gomock.Any()).
 					Return(errTest).
 					Times(1)
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
+					Times(0)
 			},
 		},
 		{
@@ -124,10 +133,14 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 				userRepoMock.EXPECT().
 					FindByUsername(ctx, data.Username).
-					Times(0)
+					Times(1)
 
 				userRepoMock.EXPECT().
 					Save(ctx, gomock.Any()).
+					Times(0)
+
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
 					Times(0)
 			},
 		},
@@ -149,12 +162,12 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				idServiceMock.EXPECT().
 					GenerateID().
 					Return(data.UserID).
-					Times(1)
+					Times(0)
 
 				hashServiceMock.EXPECT().
 					Hash(data.Password).
 					Return(data.HashedPassword, nil).
-					Times(1)
+					Times(0)
 
 				userRepoMock.EXPECT().
 					FindByUsername(ctx, data.Username).
@@ -163,6 +176,10 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 
 				userRepoMock.EXPECT().
 					Save(ctx, gomock.Any()).
+					Times(0)
+
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
 					Times(0)
 			},
 		},
@@ -177,12 +194,12 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				idServiceMock.EXPECT().
 					GenerateID().
 					Return(data.UserID).
-					Times(1)
+					Times(0)
 
 				hashServiceMock.EXPECT().
 					Hash(data.Password).
 					Return(data.HashedPassword, nil).
-					Times(1)
+					Times(0)
 
 				userRepoMock.EXPECT().
 					FindByUsername(ctx, data.Username).
@@ -192,6 +209,44 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 				userRepoMock.EXPECT().
 					Save(ctx, gomock.Any()).
 					Times(0)
+
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
+					Times(0)
+			},
+		},
+		{
+			name:  "successful user creation",
+			input: defaultInput,
+			want: want{
+				output: applicationuser.UserOutput{},
+				err:    errTest,
+			},
+			setupMocks: func() {
+				idServiceMock.EXPECT().
+					GenerateID().
+					Return(data.UserID).
+					Times(2)
+
+				hashServiceMock.EXPECT().
+					Hash(data.Password).
+					Return(data.HashedPassword, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					FindByUsername(ctx, data.Username).
+					Return(nil, nil).
+					Times(1)
+
+				userRepoMock.EXPECT().
+					Save(ctx, gomock.Any()).
+					Return(nil).
+					Times(1)
+
+				publisherMock.EXPECT().
+					Publish(ctx, gomock.Any()).
+					Return(errTest).
+					Times(1)
 			},
 		},
 	}
@@ -204,10 +259,11 @@ func TestCreateUserUseCase_Execute(t *testing.T) {
 			idServiceMock = mocks.NewMockIdentificationService(ctrl)
 			hashServiceMock = mocks.NewMockHashService(ctrl)
 			userRepoMock = mocks.NewMockUserRepository(ctrl)
+			publisherMock = mocks.NewMockPublisher(ctrl)
 
 			tt.setupMocks()
 
-			s = createuser.New(userRepoMock, idServiceMock, hashServiceMock)
+			s = createuser.New(userRepoMock, idServiceMock, hashServiceMock, publisherMock)
 
 			output, err := s.Execute(ctx, tt.input)
 

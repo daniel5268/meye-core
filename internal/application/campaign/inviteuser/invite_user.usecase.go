@@ -5,6 +5,7 @@ import (
 	applicationcampaign "meye-core/internal/application/campaign"
 	applicationuser "meye-core/internal/application/user"
 	domaincampaign "meye-core/internal/domain/campaign"
+	"meye-core/internal/domain/event"
 	"meye-core/internal/domain/shared"
 	domainuser "meye-core/internal/domain/user"
 )
@@ -15,13 +16,20 @@ type UseCase struct {
 	campainRepository     domaincampaign.Repository
 	userRepository        domainuser.Repository
 	identificationService shared.IdentificationService
+	eventPublisher        event.Publisher
 }
 
-func New(campainRepository domaincampaign.Repository, userRepository domainuser.Repository, identificationService shared.IdentificationService) *UseCase {
+func New(
+	campainRepository domaincampaign.Repository,
+	userRepository domainuser.Repository,
+	identificationService shared.IdentificationService,
+	evtPub event.Publisher,
+) *UseCase {
 	return &UseCase{
 		campainRepository:     campainRepository,
 		userRepository:        userRepository,
 		identificationService: identificationService,
+		eventPublisher:        evtPub,
 	}
 }
 
@@ -55,6 +63,10 @@ func (uc *UseCase) Execute(ctx context.Context, input applicationcampaign.Invite
 	}
 
 	if err := uc.campainRepository.Save(ctx, cmp); err != nil {
+		return applicationcampaign.InvitationOutput{}, err
+	}
+
+	if err := uc.eventPublisher.Publish(ctx, cmp.UncommittedEvents()); err != nil {
 		return applicationcampaign.InvitationOutput{}, err
 	}
 
