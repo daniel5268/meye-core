@@ -23,7 +23,7 @@ func NewCampaign(masterID, name string, identificationService shared.Identificat
 		name:     name,
 	}
 
-	c.uncommittedEvents = append(c.uncommittedEvents, newCampaignCreatedEvent(c, identificationService))
+	c.uncommittedEvents = append(c.uncommittedEvents, newCampaignCreatedEvent(c))
 
 	return c
 }
@@ -31,7 +31,7 @@ func NewCampaign(masterID, name string, identificationService shared.Identificat
 func (c *Campaign) InviteUser(userID string, identificationService shared.IdentificationService) (*Invitation, error) {
 	invitation := NewInvitation(c.id, userID, identificationService)
 	c.invitations = append(c.invitations, invitation)
-	c.uncommittedEvents = append(c.uncommittedEvents, newUserInvitedEvent(userID, c.id, identificationService))
+	c.uncommittedEvents = append(c.uncommittedEvents, newUserInvitedEvent(userID, c.id))
 
 	return invitation, nil
 }
@@ -86,6 +86,7 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 
 	pj := &PJ{
 		id:                identificationService.GenerateID(),
+		campaignID:        c.id,
 		userID:            userID,
 		name:              params.Name,
 		weight:            params.Weight,
@@ -112,7 +113,7 @@ func (c *Campaign) AddPJ(userID string, params PJCreateParameters, identificatio
 	pj.xp = CreateXPWithoutValidation(0, 0, 0)
 
 	c.pjs = append(c.pjs, pj)
-	c.uncommittedEvents = append(c.uncommittedEvents, newPjAddedEvent(pj.id, c.id, identificationService))
+	c.uncommittedEvents = append(c.uncommittedEvents, newPjAddedEvent(pj.id, c.id))
 
 	return pj, nil
 }

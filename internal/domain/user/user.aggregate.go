@@ -36,7 +36,7 @@ func NewUser(username, password string, role UserRole, identificationService sha
 		hashedPassword: hashedPassword,
 	}
 
-	u.uncommitedEvents = append(u.uncommitedEvents, newUserCreatedEvent(u, identificationService))
+	u.uncommitedEvents = append(u.uncommitedEvents, newUserCreatedEvent(u))
 
 	return u, nil
 }

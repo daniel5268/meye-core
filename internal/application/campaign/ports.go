@@ -15,3 +15,7 @@ type InviteUserUseCase interface {
 type CreatePJUseCase interface {
 	Execute(ctx context.Context, input CreatePJInput) (PJOutput, error)
 }
+
+type ConsumeXpUseCase interface {
+	Execute(ctx context.Context, input ConsumeXpInput) error
+}

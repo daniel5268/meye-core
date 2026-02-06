@@ -2,8 +2,9 @@ package user
 
 import (
 	"meye-core/internal/domain/event"
-	"meye-core/internal/domain/shared"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Compile-time check to ensure UseCase implements the port interface
@@ -26,9 +27,9 @@ func (e UserCreatedEvent) OccurredAt() time.Time              { return e.occurre
 
 func (e UserCreatedEvent) Role() UserRole { return e.role }
 
-func newUserCreatedEvent(u *User, idSer shared.IdentificationService) UserCreatedEvent {
+func newUserCreatedEvent(u *User) UserCreatedEvent {
 	return UserCreatedEvent{
-		id:         idSer.GenerateID(),
+		id:         uuid.NewString(),
 		userID:     u.id,
 		role:       u.role,
 		createdAt:  time.Now(),

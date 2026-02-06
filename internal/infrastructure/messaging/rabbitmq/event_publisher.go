@@ -147,6 +147,10 @@ func (p *Publisher) extractEventData(evt event.DomainEvent) map[string]any {
 		data["campaign_id"] = e.CampaignID()
 	case campaign.PjAddedEvent:
 		data["campaign_id"] = e.CampaignID()
+	case campaign.XpConsumedEvent:
+		data["basic"] = e.Basic()
+		data["special"] = e.Special()
+		data["supernatural"] = e.SuperNatural()
 	// User Events.
 	case user.UserCreatedEvent:
 		data["role"] = e.Role()

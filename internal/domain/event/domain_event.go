@@ -4,22 +4,27 @@ import "time"
 
 type EventType string
 
-// User Events
+// User Events.
 const (
 	EventTypeUserCreated EventType = "user_created"
 )
 
-// Campaign Events
+// Campaign Events.
 const (
 	EventTypeCampaignCreated EventType = "campaign_created"
 	EventTypeUserInvited     EventType = "user_invited"
 	EventTypePjAdded         EventType = "pj_added"
 )
 
-// Session Events
+// Session Events.
 const (
 	EventTypeSessionCreated EventType = "session_created"
 	EventTypeXPAssigned     EventType = "xp_assigned"
+)
+
+// PJ Events.
+const (
+	EventTypeXpConsumed EventType = "xp_consumed"
 )
 
 type AggregateType string

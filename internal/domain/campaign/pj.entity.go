@@ -1,5 +1,7 @@
 package campaign
 
+import "meye-core/internal/domain/event"
+
 type PJType string
 
 const (
@@ -222,6 +224,7 @@ func CreateXPWithoutValidation(basic, special, supernatural uint) XP {
 
 type PJ struct {
 	id                string
+	campaignID        string
 	userID            string
 	name              string
 	weight            uint
@@ -236,30 +239,34 @@ type PJ struct {
 	specialStats      SpecialStats
 	supernaturalStats *SupernaturalStats
 	xp                XP
+	uncommittedEvents []event.DomainEvent
 }
 
 // Getter methods
-func (p *PJ) ID() string                            { return p.id }
-func (p *PJ) UserID() string                        { return p.userID }
-func (p *PJ) Name() string                          { return p.name }
-func (p *PJ) Weight() uint                          { return p.weight }
-func (p *PJ) Height() uint                          { return p.height }
-func (p *PJ) Age() uint                             { return p.age }
-func (p *PJ) Look() uint                            { return p.look }
-func (p *PJ) Charisma() int                         { return p.charisma }
-func (p *PJ) Villainy() uint                        { return p.villainy }
-func (p *PJ) Heroism() uint                         { return p.heroism }
-func (p *PJ) Type() PJType                          { return p.pjType }
-func (p *PJ) BasicStats() BasicStats                { return p.basicStats }
-func (p *PJ) SpecialStats() SpecialStats            { return p.specialStats }
-func (p *PJ) SupernaturalStats() *SupernaturalStats { return p.supernaturalStats }
-func (p *PJ) XP() XP                                { return p.xp }
+func (p *PJ) ID() string                             { return p.id }
+func (p *PJ) CampaignID() string                     { return p.campaignID }
+func (p *PJ) UserID() string                         { return p.userID }
+func (p *PJ) Name() string                           { return p.name }
+func (p *PJ) Weight() uint                           { return p.weight }
+func (p *PJ) Height() uint                           { return p.height }
+func (p *PJ) Age() uint                              { return p.age }
+func (p *PJ) Look() uint                             { return p.look }
+func (p *PJ) Charisma() int                          { return p.charisma }
+func (p *PJ) Villainy() uint                         { return p.villainy }
+func (p *PJ) Heroism() uint                          { return p.heroism }
+func (p *PJ) Type() PJType                           { return p.pjType }
+func (p *PJ) BasicStats() BasicStats                 { return p.basicStats }
+func (p *PJ) SpecialStats() SpecialStats             { return p.specialStats }
+func (p *PJ) SupernaturalStats() *SupernaturalStats  { return p.supernaturalStats }
+func (p *PJ) XP() XP                                 { return p.xp }
+func (p *PJ) UncommittedEvents() []event.DomainEvent { return p.uncommittedEvents }
 
 // CreatePJWithoutValidation creates a PJ instance without validation.
 // This function is intended to be used by adapters (like database repositories)
 // when reconstructing entities from external sources.
 func CreatePJWithoutValidation(
 	id string,
+	campaignID string,
 	userID string,
 	name string,
 	weight uint,
@@ -277,6 +284,7 @@ func CreatePJWithoutValidation(
 ) *PJ {
 	return &PJ{
 		id:                id,
+		campaignID:        campaignID,
 		userID:            userID,
 		name:              name,
 		weight:            weight,
@@ -292,4 +300,12 @@ func CreatePJWithoutValidation(
 		supernaturalStats: supernaturalStats,
 		xp:                xp,
 	}
+}
+
+func (pj *PJ) ConsumeXp(basic, special, supernatural uint) {
+	pj.xp.basic += basic
+	pj.xp.special += special
+	pj.xp.supernatural += supernatural
+
+	pj.uncommittedEvents = append(pj.uncommittedEvents, newXpConsumendEvent(pj, basic, special, supernatural))
 }

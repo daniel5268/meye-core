@@ -2,8 +2,9 @@ package campaign
 
 import (
 	"meye-core/internal/domain/event"
-	"meye-core/internal/domain/shared"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var _ event.DomainEvent = (*CampaignCreatedEvent)(nil)
@@ -22,9 +23,9 @@ func (e CampaignCreatedEvent) AggregateType() event.AggregateType { return event
 func (e CampaignCreatedEvent) CreatedAt() time.Time               { return e.createdAt }
 func (e CampaignCreatedEvent) OccurredAt() time.Time              { return e.occurredAt }
 
-func newCampaignCreatedEvent(c *Campaign, idServ shared.IdentificationService) CampaignCreatedEvent {
+func newCampaignCreatedEvent(c *Campaign) CampaignCreatedEvent {
 	return CampaignCreatedEvent{
-		id:         idServ.GenerateID(),
+		id:         uuid.NewString(),
 		campaignID: c.id,
 		createdAt:  time.Now(),
 		occurredAt: time.Now(),
@@ -50,9 +51,9 @@ func (e UserInvitedEvent) OccurredAt() time.Time              { return e.occurre
 
 func (e UserInvitedEvent) CampaignID() string { return e.campaignID }
 
-func newUserInvitedEvent(userID, campaignID string, idServ shared.IdentificationService) UserInvitedEvent {
+func newUserInvitedEvent(userID, campaignID string) UserInvitedEvent {
 	return UserInvitedEvent{
-		id:         idServ.GenerateID(),
+		id:         uuid.NewString(),
 		campaignID: campaignID,
 		userID:     userID,
 		createdAt:  time.Now(),
@@ -79,12 +80,47 @@ func (e PjAddedEvent) OccurredAt() time.Time              { return e.occurredAt 
 
 func (e PjAddedEvent) CampaignID() string { return e.campaignID }
 
-func newPjAddedEvent(pjID, campaignID string, idServ shared.IdentificationService) PjAddedEvent {
+func newPjAddedEvent(pjID, campaignID string) PjAddedEvent {
 	return PjAddedEvent{
-		id:         idServ.GenerateID(),
+		id:         uuid.NewString(),
 		campaignID: campaignID,
 		pjID:       pjID,
 		createdAt:  time.Now(),
 		occurredAt: time.Now(),
+	}
+}
+
+type XpConsumedEvent struct {
+	id           string
+	pjID         string
+	basic        uint
+	special      uint
+	supernatural uint
+	createdAt    time.Time
+	occurredAt   time.Time
+}
+
+var _ event.DomainEvent = (*XpConsumedEvent)(nil)
+
+func (e XpConsumedEvent) ID() string                         { return e.id }
+func (e XpConsumedEvent) Type() event.EventType              { return event.EventTypeXpConsumed }
+func (e XpConsumedEvent) AggregateID() string                { return e.pjID }
+func (e XpConsumedEvent) AggregateType() event.AggregateType { return event.AggregateTypePJ }
+func (e XpConsumedEvent) CreatedAt() time.Time               { return e.createdAt }
+func (e XpConsumedEvent) OccurredAt() time.Time              { return e.occurredAt }
+
+func (e XpConsumedEvent) Basic() uint        { return e.basic }
+func (e XpConsumedEvent) Special() uint      { return e.special }
+func (e XpConsumedEvent) SuperNatural() uint { return e.supernatural }
+
+func newXpConsumendEvent(pj *PJ, basic, special, supernatural uint) XpConsumedEvent {
+	return XpConsumedEvent{
+		id:           uuid.NewString(),
+		pjID:         pj.id,
+		basic:        basic,
+		special:      special,
+		supernatural: supernatural,
+		createdAt:    time.Now(),
+		occurredAt:   time.Now(),
 	}
 }

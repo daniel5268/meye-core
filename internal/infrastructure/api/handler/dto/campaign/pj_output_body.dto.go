@@ -4,6 +4,7 @@ import "meye-core/internal/application/campaign"
 
 type PJOutputBody struct {
 	ID                string                 `json:"id"`
+	CampaignID        string                 `json:"campaign_id"`
 	UserID            string                 `json:"user_id"`
 	Name              string                 `json:"name"`
 	Weight            uint                   `json:"weight"`
@@ -93,17 +94,18 @@ type SkillBody struct {
 
 func MapPJOutputBody(output campaign.PJOutput) PJOutputBody {
 	body := PJOutputBody{
-		ID:       output.ID,
-		UserID:   output.UserID,
-		Name:     output.Name,
-		Weight:   output.Weight,
-		Height:   output.Height,
-		Age:      output.Age,
-		Look:     output.Look,
-		Charisma: output.Charisma,
-		Villainy: output.Villainy,
-		Heroism:  output.Heroism,
-		PJType:   output.PJType,
+		ID:         output.ID,
+		CampaignID: output.CampaignID,
+		UserID:     output.UserID,
+		Name:       output.Name,
+		Weight:     output.Weight,
+		Height:     output.Height,
+		Age:        output.Age,
+		Look:       output.Look,
+		Charisma:   output.Charisma,
+		Villainy:   output.Villainy,
+		Heroism:    output.Heroism,
+		PJType:     output.PJType,
 
 		BasicStats: BasicStatsBody{
 			Physical: PhysicalBody{
