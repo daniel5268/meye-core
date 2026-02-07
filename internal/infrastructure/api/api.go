@@ -55,6 +55,7 @@ func (r *Router) setupRoutes() {
 	v1 := r.engine.Group("/api/v1")
 	r.setupUserRoutes(v1)
 	r.setupCampaignRoutes(v1)
+	r.setupPjRoutes(v1)
 }
 
 func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
@@ -88,6 +89,17 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 		campaigns.POST("/:campaignID/sessions",
 			r.handlers.AuthHandler.RequireCampaignMaster(),
 			r.handlers.CampaignHandler.CreateSession,
+		)
+	}
+}
+
+func (r *Router) setupPjRoutes(group *gin.RouterGroup) {
+	pjs := group.Group("/pjs")
+	pjs.Use(r.handlers.AuthHandler.AuthMiddleware())
+	{
+		pjs.PUT("/:pjID/stats",
+			r.handlers.AuthHandler.RequirePjUser(),
+			r.handlers.CampaignHandler.UpdatePJStats,
 		)
 	}
 }

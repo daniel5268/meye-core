@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"meye-core/internal/domain/campaign"
+	"meye-core/internal/infrastructure/repository/shared"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var _ campaign.PjRepository = (*PjRepository)(nil)
@@ -20,14 +20,17 @@ func NewPjRepository(db *gorm.DB) *PjRepository {
 }
 
 func (r *PjRepository) Save(ctx context.Context, pj *campaign.PJ) error {
-	model := GetModelFromDomainPJ(pj)
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		model := GetModelFromDomainPJ(pj)
 
-	result := r.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		UpdateAll: true,
-	}).Create(model)
+		if err := tx.WithContext(ctx).Save(model).Error; err != nil {
+			return err
+		}
 
-	return result.Error
+		events := getPjUncommittedEvents(pj)
+
+		return tx.Create(&events).Error
+	})
 }
 
 func (r *PjRepository) FindByID(ctx context.Context, id string) (*campaign.PJ, error) {
@@ -41,4 +44,24 @@ func (r *PjRepository) FindByID(ctx context.Context, id string) (*campaign.PJ, e
 	}
 
 	return pjModel.ToDomain(), nil
+}
+
+func getPjUncommittedEvents(pj *campaign.PJ) []shared.DomainEvent {
+	events := pj.UncommittedEvents()
+	domainEvents := make([]shared.DomainEvent, 0, len(events))
+	for _, evt := range events {
+		eventModel := shared.DomainEvent{
+			ID:            evt.ID(),
+			Type:          string(evt.Type()),
+			AggregateType: string(evt.AggregateType()),
+			AggregateID:   evt.AggregateID(),
+			Data:          evt.GetSerializedData(),
+			CreatedAt:     evt.CreatedAt(),
+			OccurredAt:    evt.OccurredAt(),
+		}
+
+		domainEvents = append(domainEvents, eventModel)
+	}
+
+	return domainEvents
 }

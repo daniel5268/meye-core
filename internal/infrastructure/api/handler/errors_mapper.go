@@ -53,6 +53,16 @@ func respondMappedError(c *gin.Context, err error) {
 			Error: "All PJs should belong to the campaign",
 			Code:  domaincampaign.ErrPJsNotInCampaign.Error(),
 		})
+	case errors.Is(err, domaincampaign.ErrInsufficientXP):
+		c.JSON(http.StatusNotAcceptable, ErrorResponse{
+			Error: "There is not enough XP to perform the action",
+			Code:  domaincampaign.ErrInsufficientXP.Error(),
+		})
+	case errors.Is(err, domaincampaign.ErrCannotReduceStats):
+		c.JSON(http.StatusNotAcceptable, ErrorResponse{
+			Error: "PJ stats can't be reduced",
+			Code:  domaincampaign.ErrCannotReduceStats.Error(),
+		})
 	default:
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: "Internal Server Error",

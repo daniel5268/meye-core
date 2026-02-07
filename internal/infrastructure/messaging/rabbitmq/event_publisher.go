@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"meye-core/internal/domain/campaign"
 	"meye-core/internal/domain/event"
-	"meye-core/internal/domain/session"
-	"meye-core/internal/domain/user"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -89,7 +86,7 @@ func (p *Publisher) Publish(ctx context.Context, events []event.DomainEvent) err
 			Type:          string(evt.Type()),
 			AggregateID:   evt.AggregateID(),
 			AggregateType: string(evt.AggregateType()),
-			Data:          p.extractEventData(evt),
+			Data:          evt.GetSerializedData(),
 			CreatedAt:     evt.CreatedAt().Format("2006-01-02T15:04:05.999Z07:00"),
 			OccurredAt:    evt.OccurredAt().Format("2006-01-02T15:04:05.999Z07:00"),
 		}
@@ -124,39 +121,6 @@ func (p *Publisher) Publish(ctx context.Context, events []event.DomainEvent) err
 	}
 
 	return nil
-}
-
-// extractEventData extracts specific event data based on event type using type assertions
-func (p *Publisher) extractEventData(evt event.DomainEvent) map[string]any {
-	data := make(map[string]any)
-
-	switch e := evt.(type) {
-	// Session Events.
-	case session.SessionCreatedEvent:
-		data["campaign_id"] = e.CampaignID()
-	case session.XPAssignedEvent:
-		data["session_id"] = e.SessionID()
-		assignedXP := e.AssignedXP()
-		data["assigned_xp"] = map[string]any{
-			"basic":        assignedXP.Basic(),
-			"special":      assignedXP.Special(),
-			"supernatural": assignedXP.Supernatural(),
-		}
-	// Campaign Events.
-	case campaign.UserInvitedEvent:
-		data["campaign_id"] = e.CampaignID()
-	case campaign.PjAddedEvent:
-		data["campaign_id"] = e.CampaignID()
-	case campaign.XpConsumedEvent:
-		data["basic"] = e.Basic()
-		data["special"] = e.Special()
-		data["supernatural"] = e.SuperNatural()
-	// User Events.
-	case user.UserCreatedEvent:
-		data["role"] = e.Role()
-	}
-
-	return data
 }
 
 // Close closes the RabbitMQ channel and connection

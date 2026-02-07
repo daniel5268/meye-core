@@ -5,7 +5,7 @@ const (
 	costLife       = 5
 )
 
-func (bs *BasicStats) GetRequiredXP() int {
+func (bs *BasicStats) GetRequiredXP() uint {
 	physicalGroup := bs.physical.getGroup()
 	mentalGroup := bs.mental.getGroup()
 	coordGroup := bs.coordination.getGroup()
@@ -16,7 +16,7 @@ func (bs *BasicStats) GetRequiredXP() int {
 
 	lifeXP := costLife * bs.life
 
-	return int(physicalXP + mentalXP + coordXP + lifeXP)
+	return physicalXP + mentalXP + coordXP + lifeXP
 }
 
 func (p Physical) getGroup() []uint {

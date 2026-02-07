@@ -3,7 +3,6 @@ package postgres
 
 import (
 	"context"
-	"meye-core/internal/domain/event"
 	"meye-core/internal/domain/session"
 	"meye-core/internal/infrastructure/repository/shared"
 
@@ -34,25 +33,6 @@ func (r *Repository) Save(ctx context.Context, s *session.Session) error {
 	})
 }
 
-func extractEventData(evt event.DomainEvent) shared.EventData {
-	data := make(shared.EventData)
-
-	switch e := evt.(type) {
-	case session.SessionCreatedEvent:
-		data["campaign_id"] = e.CampaignID()
-	case session.XPAssignedEvent:
-		data["session_id"] = e.SessionID()
-		assignedXP := e.AssignedXP()
-		data["assigned_xp"] = map[string]any{
-			"basic":        assignedXP.Basic(),
-			"special":      assignedXP.Special(),
-			"supernatural": assignedXP.Supernatural(),
-		}
-	}
-
-	return data
-}
-
 func getUncommittedEvents(s *session.Session) []shared.DomainEvent {
 	events := s.UncommittedEvents()
 	domainEvents := make([]shared.DomainEvent, 0, len(events))
@@ -62,7 +42,7 @@ func getUncommittedEvents(s *session.Session) []shared.DomainEvent {
 			Type:          string(evt.Type()),
 			AggregateType: string(evt.AggregateType()),
 			AggregateID:   evt.AggregateID(),
-			Data:          extractEventData(evt),
+			Data:          evt.GetSerializedData(),
 			CreatedAt:     evt.CreatedAt(),
 			OccurredAt:    evt.OccurredAt(),
 		}

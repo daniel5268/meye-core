@@ -27,6 +27,12 @@ func (e UserCreatedEvent) OccurredAt() time.Time              { return e.occurre
 
 func (e UserCreatedEvent) Role() UserRole { return e.role }
 
+func (e UserCreatedEvent) GetSerializedData() map[string]interface{} {
+	return map[string]interface{}{
+		"role": e.role,
+	}
+}
+
 func newUserCreatedEvent(u *User) UserCreatedEvent {
 	return UserCreatedEvent{
 		id:         uuid.NewString(),

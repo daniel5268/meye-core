@@ -309,3 +309,214 @@ func (pj *PJ) ConsumeXp(basic, special, supernatural uint) {
 
 	pj.uncommittedEvents = append(pj.uncommittedEvents, newXpConsumendEvent(pj, basic, special, supernatural))
 }
+
+type PhysicalParameters struct {
+	Strength   uint
+	Agility    uint
+	Speed      uint
+	Resistance uint
+}
+
+type MentalParameters struct {
+	Intelligence  uint
+	Wisdom        uint
+	Concentration uint
+	Will          uint
+}
+
+type CoordinationParameters struct {
+	Precision   uint
+	Calculation uint
+	Range       uint
+	Reflexes    uint
+}
+
+type BasicStatsParameters struct {
+	Physical     PhysicalParameters
+	Mental       MentalParameters
+	Coordination CoordinationParameters
+	Life         uint
+}
+
+type PhysicalSkillsParameters struct {
+	Empowerment  uint
+	VitalControl uint
+}
+
+type MentalSkillsParameters struct {
+	Illusion      uint
+	MentalControl uint
+}
+
+type EnergySkillsParameters struct {
+	ObjectHandling uint
+	EnergyHandling uint
+}
+
+type SpecialStatsParameters struct {
+	Physical   PhysicalSkillsParameters
+	Mental     MentalSkillsParameters
+	Energy     EnergySkillsParameters
+	EnergyTank uint
+}
+
+type SkillParameters struct {
+	Transformations []uint
+}
+
+type SupernaturalStatsParameters struct {
+	Skills []SkillParameters
+}
+
+type PjUpdateParameters struct {
+	BasicStats        BasicStatsParameters
+	SpecialStats      SpecialStatsParameters
+	SupernaturalStats *SupernaturalStatsParameters // pointer because it's optional (only for supernatural PJs)
+}
+
+func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
+	var basicSpentXP, specialSpentXP, supernaturalSpentXP uint
+
+	previousBasicStats := pj.basicStats
+	previousSpecialStats := pj.specialStats
+	previousSupernaturalStats := pj.supernaturalStats
+
+	newBasicStats := CreateBasicStatsWithoutValidation(
+		CreatePhysicalWithoutValidation(
+			params.BasicStats.Physical.Strength,
+			params.BasicStats.Physical.Agility,
+			params.BasicStats.Physical.Speed,
+			params.BasicStats.Physical.Resistance,
+			pj.basicStats.physical.isTalented,
+		),
+		CreateMentalWithoutValidation(
+			params.BasicStats.Mental.Intelligence,
+			params.BasicStats.Mental.Wisdom,
+			params.BasicStats.Mental.Concentration,
+			params.BasicStats.Mental.Will,
+			pj.basicStats.mental.isTalented,
+		),
+		CreateCoordinationWithoutValidation(
+			params.BasicStats.Coordination.Precision,
+			params.BasicStats.Coordination.Calculation,
+			params.BasicStats.Coordination.Range,
+			params.BasicStats.Coordination.Reflexes,
+			pj.basicStats.coordination.isTalented,
+		),
+		params.BasicStats.Life,
+	)
+
+	if pj.basicStats.isHigherThan(newBasicStats) {
+		return ErrCannotReduceStats
+	}
+
+	newRequiredXP := newBasicStats.GetRequiredXP()
+	currentRequiredXP := pj.basicStats.GetRequiredXP()
+	basicSpentXP = newRequiredXP - currentRequiredXP
+
+	// Check if player has enough XP
+	if basicSpentXP > pj.xp.basic {
+		return ErrInsufficientXP
+	}
+
+	// Update Special Stats
+	newSpecialStats := CreateSpecialStatsWithoutValidation(
+		CreatePhysicalSkillsWithoutValidation(
+			params.SpecialStats.Physical.Empowerment,
+			params.SpecialStats.Physical.VitalControl,
+			pj.specialStats.physical.isTalented,
+		),
+		CreateMentalSkillsWithoutValidation(
+			params.SpecialStats.Mental.Illusion,
+			params.SpecialStats.Mental.MentalControl,
+			pj.specialStats.mental.isTalented,
+		),
+		CreateEnergySkillsWithoutValidation(
+			params.SpecialStats.Energy.ObjectHandling,
+			params.SpecialStats.Energy.EnergyHandling,
+			pj.specialStats.energy.isTalented,
+		),
+		params.SpecialStats.EnergyTank,
+		pj.specialStats.isEnergyTalented,
+	)
+
+	// Check if new stats are HIGHER than current stats
+	if pj.specialStats.isHigherThan(newSpecialStats) {
+		return ErrCannotReduceStats
+	}
+
+	// Calculate required XP
+	newRequiredXP = uint(newSpecialStats.GetRequiredXP())
+	currentRequiredXP = uint(pj.specialStats.GetRequiredXP())
+	specialSpentXP = newRequiredXP - currentRequiredXP
+
+	// Check if player has enough XP
+	if specialSpentXP > pj.xp.special {
+		return ErrInsufficientXP
+	}
+
+	// Update Supernatural Stats (only if PJ is supernatural type)
+	var newSupernaturalStats *SupernaturalStats
+	if pj.pjType == PJTypeSupernatural {
+		if params.SupernaturalStats == nil {
+			return ErrSupernaturalStatsRequired
+		}
+
+		skills := make([]Skill, len(params.SupernaturalStats.Skills))
+		for i, skillParam := range params.SupernaturalStats.Skills {
+			transformations := make([]uint, len(skillParam.Transformations))
+			copy(transformations, skillParam.Transformations)
+			skills[i] = CreateSkillWithoutValidation(transformations)
+		}
+
+		newSupernaturalStats = CreateSupernaturalStatsWithoutValidation(skills)
+
+		// Check if new stats are HIGHER than current stats
+		if pj.supernaturalStats.isHigherThan(newSupernaturalStats) {
+			return ErrCannotReduceStats
+		}
+
+		// Calculate required XP
+		newRequiredXP = uint(newSupernaturalStats.GetRequiredXP())
+		currentRequiredXP = uint(pj.supernaturalStats.GetRequiredXP())
+		supernaturalSpentXP = newRequiredXP - currentRequiredXP
+
+		// Check if player has enough XP
+		if supernaturalSpentXP > pj.xp.supernatural {
+			return ErrInsufficientXP
+		}
+	} else {
+		// Non-supernatural PJs cannot have supernatural stats
+		if params.SupernaturalStats != nil {
+			return ErrCannotUpdateSupernaturalStats
+		}
+	}
+
+	// Create the event BEFORE applying changes (with both previous and new stats)
+	statsUpdatedEvent := newStatsUpdatedEvent(
+		pj,
+		basicSpentXP,
+		specialSpentXP,
+		supernaturalSpentXP,
+		previousBasicStats,
+		previousSpecialStats,
+		previousSupernaturalStats,
+		newBasicStats,
+		newSpecialStats,
+		newSupernaturalStats,
+	)
+
+	// All validations passed, apply changes
+	pj.basicStats = newBasicStats
+	pj.specialStats = newSpecialStats
+	if newSupernaturalStats != nil {
+		pj.supernaturalStats = newSupernaturalStats
+	}
+	pj.xp.basic -= basicSpentXP
+	pj.xp.special -= specialSpentXP
+	pj.xp.supernatural -= supernaturalSpentXP
+
+	pj.uncommittedEvents = append(pj.uncommittedEvents, statsUpdatedEvent)
+
+	return nil
+}
