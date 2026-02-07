@@ -414,12 +414,10 @@ func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
 	currentRequiredXP := pj.basicStats.GetRequiredXP()
 	basicSpentXP = newRequiredXP - currentRequiredXP
 
-	// Check if player has enough XP
 	if basicSpentXP > pj.xp.basic {
 		return ErrInsufficientXP
 	}
 
-	// Update Special Stats
 	newSpecialStats := CreateSpecialStatsWithoutValidation(
 		CreatePhysicalSkillsWithoutValidation(
 			params.SpecialStats.Physical.Empowerment,
@@ -440,22 +438,18 @@ func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
 		pj.specialStats.isEnergyTalented,
 	)
 
-	// Check if new stats are HIGHER than current stats
 	if pj.specialStats.isHigherThan(newSpecialStats) {
 		return ErrCannotReduceStats
 	}
 
-	// Calculate required XP
 	newRequiredXP = uint(newSpecialStats.GetRequiredXP())
 	currentRequiredXP = uint(pj.specialStats.GetRequiredXP())
 	specialSpentXP = newRequiredXP - currentRequiredXP
 
-	// Check if player has enough XP
 	if specialSpentXP > pj.xp.special {
 		return ErrInsufficientXP
 	}
 
-	// Update Supernatural Stats (only if PJ is supernatural type)
 	var newSupernaturalStats *SupernaturalStats
 	if pj.pjType == PJTypeSupernatural {
 		if params.SupernaturalStats == nil {
@@ -471,28 +465,23 @@ func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
 
 		newSupernaturalStats = CreateSupernaturalStatsWithoutValidation(skills)
 
-		// Check if new stats are HIGHER than current stats
 		if pj.supernaturalStats.isHigherThan(newSupernaturalStats) {
 			return ErrCannotReduceStats
 		}
 
-		// Calculate required XP
 		newRequiredXP = uint(newSupernaturalStats.GetRequiredXP())
 		currentRequiredXP = uint(pj.supernaturalStats.GetRequiredXP())
 		supernaturalSpentXP = newRequiredXP - currentRequiredXP
 
-		// Check if player has enough XP
 		if supernaturalSpentXP > pj.xp.supernatural {
 			return ErrInsufficientXP
 		}
 	} else {
-		// Non-supernatural PJs cannot have supernatural stats
 		if params.SupernaturalStats != nil {
 			return ErrCannotUpdateSupernaturalStats
 		}
 	}
 
-	// Create the event BEFORE applying changes (with both previous and new stats)
 	statsUpdatedEvent := newStatsUpdatedEvent(
 		pj,
 		basicSpentXP,
@@ -506,7 +495,6 @@ func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
 		newSupernaturalStats,
 	)
 
-	// All validations passed, apply changes
 	pj.basicStats = newBasicStats
 	pj.specialStats = newSpecialStats
 	if newSupernaturalStats != nil {

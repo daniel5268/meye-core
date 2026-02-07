@@ -90,6 +90,10 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequireCampaignMaster(),
 			r.handlers.CampaignHandler.CreateSession,
 		)
+		campaigns.GET("/:campaignID",
+			r.handlers.AuthHandler.RequireCampaignMaster(),
+			r.handlers.CampaignHandler.GetCampaign,
+		)
 	}
 }
 

@@ -8,17 +8,31 @@ type CreateCampaignInput struct {
 }
 
 func MapCampaignOutput(c *campaign.Campaign) CampaignOutput {
+	invitations := make([]InvitationOutput, len(c.Invitations()))
+	for i, inv := range c.Invitations() {
+		invitations[i] = MapInvitationOutput(inv)
+	}
+
+	pjs := make([]PJOutput, len(c.PJs()))
+	for i, pj := range c.PJs() {
+		pjs[i] = MapPJOutput(pj)
+	}
+
 	return CampaignOutput{
-		ID:       c.ID(),
-		Name:     c.Name(),
-		MasterID: c.MasterID(),
+		ID:          c.ID(),
+		Name:        c.Name(),
+		MasterID:    c.MasterID(),
+		Invitations: invitations,
+		PJs:         pjs,
 	}
 }
 
 type CampaignOutput struct {
-	ID       string
-	Name     string
-	MasterID string
+	ID          string
+	Name        string
+	MasterID    string
+	Invitations []InvitationOutput
+	PJs         []PJOutput
 }
 
 type InviteUserInput struct {
