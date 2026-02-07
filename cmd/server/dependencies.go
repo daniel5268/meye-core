@@ -8,6 +8,7 @@ import (
 	"meye-core/internal/application/campaign/createcampaign"
 	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/getcampaign"
+	"meye-core/internal/application/campaign/getpj"
 	"meye-core/internal/application/campaign/inviteuser"
 	"meye-core/internal/application/campaign/updatepjstats"
 	"meye-core/internal/application/session"
@@ -43,6 +44,7 @@ type CampaignUseCases struct {
 	CreatePJ       campaign.CreatePJUseCase
 	UpdatePjStats  campaign.UpdateStatsUseCase
 	GetCampaign    campaign.GetCampaignUseCase
+	GetPj          campaign.GetPjUseCase
 }
 
 type SessionUseCases struct {
@@ -215,6 +217,9 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetCampaign: getcampaign.New(
 				c.Repositories.Campaign,
 			),
+			GetPj: getpj.New(
+				c.Repositories.PJ,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -247,6 +252,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.Session.CreateSession,
 			c.UseCases.Campaign.UpdatePjStats,
 			c.UseCases.Campaign.GetCampaign,
+			c.UseCases.Campaign.GetPj,
 		),
 	}
 }

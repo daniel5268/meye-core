@@ -27,3 +27,7 @@ type UpdateStatsUseCase interface {
 type GetCampaignUseCase interface {
 	Execute(ctx context.Context, campID string) (CampaignOutput, error)
 }
+
+type GetPjUseCase interface {
+	Execute(ctx context.Context, pjID string) (PJOutput, error)
+}
