@@ -249,3 +249,109 @@ type ConsumeXpInput struct {
 	PjID string
 	Xp   XpAmounts
 }
+
+type UpdatePjStatsInput struct {
+	PjID         string
+	Basic        BasicStats
+	Special      SpecialStats
+	Supernatural *SupernaturalStats
+}
+
+func MapToPhysicalParameters(p Physical) campaign.PhysicalParameters {
+	return campaign.PhysicalParameters{
+		Strength:   p.Strength,
+		Agility:    p.Agility,
+		Speed:      p.Speed,
+		Resistance: p.Resistance,
+	}
+}
+
+func MapToMentalParameters(m Mental) campaign.MentalParameters {
+	return campaign.MentalParameters{
+		Intelligence:  m.Inteligence,
+		Wisdom:        m.Wisdom,
+		Concentration: m.Concentration,
+		Will:          m.Will,
+	}
+}
+
+func MapToCoordinationParameters(c Coordination) campaign.CoordinationParameters {
+	return campaign.CoordinationParameters{
+		Precision:   c.Precision,
+		Calculation: c.Calculation,
+		Range:       c.Range,
+		Reflexes:    c.Reflexes,
+	}
+}
+
+func MapToBasicStatsParameters(bs BasicStats) campaign.BasicStatsParameters {
+	return campaign.BasicStatsParameters{
+		Physical:     MapToPhysicalParameters(bs.Physical),
+		Mental:       MapToMentalParameters(bs.Mental),
+		Coordination: MapToCoordinationParameters(bs.Coordination),
+		Life:         bs.Life,
+	}
+}
+
+func MapToPhysicalSkillsParameters(ps PhysicalSkills) campaign.PhysicalSkillsParameters {
+	return campaign.PhysicalSkillsParameters{
+		Empowerment:  ps.Empowerment,
+		VitalControl: ps.VitalControl,
+	}
+}
+
+func MapToMentalSkillsParameters(ms MentalSkills) campaign.MentalSkillsParameters {
+	return campaign.MentalSkillsParameters{
+		Illusion:      ms.Ilusion,
+		MentalControl: ms.MentalControl,
+	}
+}
+
+func MapToEnergySkillsParameters(es EnergySkills) campaign.EnergySkillsParameters {
+	return campaign.EnergySkillsParameters{
+		ObjectHandling: es.ObjectHandling,
+		EnergyHandling: es.EnergyHandling,
+	}
+}
+
+func MapToSpecialStatsParameters(ss SpecialStats) campaign.SpecialStatsParameters {
+	return campaign.SpecialStatsParameters{
+		Physical:   MapToPhysicalSkillsParameters(ss.Physical),
+		Mental:     MapToMentalSkillsParameters(ss.Mental),
+		Energy:     MapToEnergySkillsParameters(ss.Energy),
+		EnergyTank: ss.EnergyTank,
+	}
+}
+
+func MapToSkillParameters(s Skill) campaign.SkillParameters {
+	transformations := make([]uint, len(s.Transformations))
+	copy(transformations, s.Transformations)
+	return campaign.SkillParameters{
+		Transformations: transformations,
+	}
+}
+
+func MapToSupernaturalStatsParameters(ss SupernaturalStats) campaign.SupernaturalStatsParameters {
+	skills := make([]campaign.SkillParameters, len(ss.Skills))
+	for i, skill := range ss.Skills {
+		skills[i] = MapToSkillParameters(skill)
+	}
+	return campaign.SupernaturalStatsParameters{
+		Skills: skills,
+	}
+}
+
+func MapToUpdatePjStatsParameters(input UpdatePjStatsInput) campaign.PjUpdateParameters {
+	params := campaign.PjUpdateParameters{
+		BasicStats:   MapToBasicStatsParameters(input.Basic),
+		SpecialStats: MapToSpecialStatsParameters(input.Special),
+	}
+
+	// Only map supernatural stats if provided
+	if input.Supernatural != nil {
+		supernaturalParams := MapToSupernaturalStatsParameters(*input.Supernatural)
+		params.SupernaturalStats = &supernaturalParams
+	}
+
+	return params
+}

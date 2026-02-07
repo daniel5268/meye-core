@@ -29,6 +29,12 @@ func (e SessionCreatedEvent) AggregateType() event.AggregateType { return event.
 
 func (e SessionCreatedEvent) CampaignID() string { return e.campaignID }
 
+func (e SessionCreatedEvent) GetSerializedData() map[string]interface{} {
+	return map[string]interface{}{
+		"campaign_id": e.campaignID,
+	}
+}
+
 func newSessionCreatedEvent(s *Session) SessionCreatedEvent {
 	return SessionCreatedEvent{
 		id:         uuid.NewString(),
@@ -70,6 +76,17 @@ func (e XPAssignedEvent) AggregateType() event.AggregateType { return event.Aggr
 
 func (e XPAssignedEvent) SessionID() string      { return e.sessionID }
 func (e XPAssignedEvent) AssignedXP() AssignedXP { return e.assignedXP }
+
+func (e XPAssignedEvent) GetSerializedData() map[string]interface{} {
+	return map[string]interface{}{
+		"session_id": e.sessionID,
+		"assigned_xp": map[string]interface{}{
+			"basic":        e.assignedXP.Basic(),
+			"special":      e.assignedXP.Special(),
+			"supernatural": e.assignedXP.Supernatural(),
+		},
+	}
+}
 
 func newXPAssignedEvent(xpAssignation XPAssignation, sessionID string, sessionCreatedAt time.Time) XPAssignedEvent {
 	return XPAssignedEvent{

@@ -15,6 +15,7 @@ type AuthHandler struct {
 	jwtService         user.JWTService
 	userRepository     user.Repository
 	campaignRepository campaign.Repository
+	pjRepository       campaign.PjRepository
 }
 
 type responseError struct {
@@ -27,12 +28,19 @@ var forbiddenError = responseError{Error: "Forbidden"}
 
 const AuthKey = "auth"
 
-func NewAuthHandler(apiKey string, jwtService user.JWTService, userRepo user.Repository, campaignRepo campaign.Repository) *AuthHandler {
+func NewAuthHandler(
+	apiKey string,
+	jwtService user.JWTService,
+	userRepo user.Repository,
+	campaignRepo campaign.Repository,
+	pjRepo campaign.PjRepository,
+) *AuthHandler {
 	return &AuthHandler{
 		apiKey:             apiKey,
 		jwtService:         jwtService,
 		userRepository:     userRepo,
 		campaignRepository: campaignRepo,
+		pjRepository:       pjRepo,
 	}
 }
 
@@ -163,7 +171,7 @@ func (h *AuthHandler) RequireCampaignMaster() gin.HandlerFunc {
 		// Get campaign ID from URI parameter
 		campaignID := c.Param("campaignID")
 		if campaignID == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, responseError{Error: "campaignID parameter is required", Code: "MISSING_CAMPAIGN_ID"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseError{Error: "Parameter campaignID is required", Code: "MISSING_CAMPAIGN_ID"})
 			return
 		}
 
@@ -181,6 +189,47 @@ func (h *AuthHandler) RequireCampaignMaster() gin.HandlerFunc {
 
 		// Check if authenticated user is the campaign master
 		if cmp.MasterID() != auth.UserID {
+			c.AbortWithStatusJSON(http.StatusForbidden, forbiddenError)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func (h *AuthHandler) RequirePjUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get auth context set by AuthMiddleware
+		authValue, exists := c.Get(AuthKey)
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+			return
+		}
+
+		auth, ok := authValue.(AuthContext)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+			return
+		}
+
+		pjID := c.Param("pjID")
+		if pjID == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseError{Error: "Parameter pjID is required", Code: "MISSING_PJ_ID"})
+			return
+		}
+
+		pj, err := h.pjRepository.FindByID(c.Request.Context(), pjID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseError{Error: "Failed to retrieve pj", Code: "FAILED_TO_RETRIEVE_CAMPAIGN"})
+			return
+		}
+
+		if pj == nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, responseError{Error: "PJ not found", Code: "PJ_NOT_FOUND"})
+			return
+		}
+
+		if pj.UserID() != auth.UserID {
 			c.AbortWithStatusJSON(http.StatusForbidden, forbiddenError)
 			return
 		}

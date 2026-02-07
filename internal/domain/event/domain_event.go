@@ -24,7 +24,8 @@ const (
 
 // PJ Events.
 const (
-	EventTypeXpConsumed EventType = "xp_consumed"
+	EventTypeXpConsumed   EventType = "xp_consumed"
+	EventTypeStatsUpdated EventType = "stats_updated"
 )
 
 type AggregateType string
@@ -43,4 +44,5 @@ type DomainEvent interface {
 	AggregateType() AggregateType
 	CreatedAt() time.Time
 	OccurredAt() time.Time
+	GetSerializedData() map[string]interface{}
 }

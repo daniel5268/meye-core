@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"meye-core/internal/domain/campaign"
-	"meye-core/internal/domain/event"
 	"meye-core/internal/infrastructure/repository/shared"
 
 	"gorm.io/gorm"
@@ -194,19 +193,6 @@ func (r *Repository) Save(ctx context.Context, c *campaign.Campaign) error {
 	})
 }
 
-func extractEventData(evt event.DomainEvent) shared.EventData {
-	data := make(shared.EventData)
-
-	switch e := evt.(type) {
-	case campaign.UserInvitedEvent:
-		data["campaign_id"] = e.CampaignID()
-	case campaign.PjAddedEvent:
-		data["campaign_id"] = e.CampaignID()
-	}
-
-	return data
-}
-
 func getUncommittedEvents(c *campaign.Campaign) []shared.DomainEvent {
 	events := c.UncommittedEvents()
 	domainEvents := make([]shared.DomainEvent, 0, len(events))
@@ -216,7 +202,7 @@ func getUncommittedEvents(c *campaign.Campaign) []shared.DomainEvent {
 			Type:          string(evt.Type()),
 			AggregateType: string(evt.AggregateType()),
 			AggregateID:   evt.AggregateID(),
-			Data:          extractEventData(evt),
+			Data:          evt.GetSerializedData(),
 			CreatedAt:     evt.CreatedAt(),
 			OccurredAt:    evt.OccurredAt(),
 		}

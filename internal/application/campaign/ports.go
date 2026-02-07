@@ -19,3 +19,7 @@ type CreatePJUseCase interface {
 type ConsumeXpUseCase interface {
 	Execute(ctx context.Context, input ConsumeXpInput) error
 }
+
+type UpdateStatsUseCase interface {
+	Execute(ctx context.Context, input UpdatePjStatsInput) (PJOutput, error)
+}

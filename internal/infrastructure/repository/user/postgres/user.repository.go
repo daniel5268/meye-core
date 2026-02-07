@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"meye-core/internal/domain/event"
 	"meye-core/internal/domain/user"
 	"meye-core/internal/infrastructure/repository/shared"
 	"time"
@@ -85,7 +84,7 @@ func getUncommittedEvents(user *user.User) []shared.DomainEvent {
 			Type:          string(evt.Type()),
 			AggregateType: string(evt.AggregateType()),
 			AggregateID:   evt.AggregateID(),
-			Data:          extractEventData(evt),
+			Data:          evt.GetSerializedData(),
 			CreatedAt:     evt.CreatedAt(),
 			OccurredAt:    evt.OccurredAt(),
 		}
@@ -94,13 +93,4 @@ func getUncommittedEvents(user *user.User) []shared.DomainEvent {
 	}
 
 	return domainEvents
-}
-
-func extractEventData(event event.DomainEvent) shared.EventData {
-	data := make(shared.EventData)
-	switch e := event.(type) {
-	case user.UserCreatedEvent:
-		data["role"] = e.Role()
-	}
-	return data
 }

@@ -8,6 +8,7 @@ import (
 	"meye-core/internal/application/campaign/createcampaign"
 	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/inviteuser"
+	"meye-core/internal/application/campaign/updatepjstats"
 	"meye-core/internal/application/session"
 	"meye-core/internal/application/session/createsession"
 	"meye-core/internal/application/user"
@@ -39,6 +40,7 @@ type CampaignUseCases struct {
 	CreateCampaign campaign.CreateCampaignUseCase
 	InviteUser     campaign.InviteUserUseCase
 	CreatePJ       campaign.CreatePJUseCase
+	UpdatePjStats  campaign.UpdateStatsUseCase
 }
 
 type SessionUseCases struct {
@@ -55,6 +57,7 @@ type Repositories struct {
 	User     *postgresUserRepo.Repository
 	Campaign *postgresCampaignRepo.Repository
 	Session  *postgresSessionRepo.Repository
+	PJ       *postgresCampaignRepo.PjRepository
 }
 
 type Services struct {
@@ -167,6 +170,7 @@ func (c *DependencyContainer) initializeRepositories() {
 		User:     postgresUserRepo.New(c.Database),
 		Campaign: postgresCampaignRepo.New(c.Database),
 		Session:  postgresSessionRepo.New(c.Database),
+		PJ:       postgresCampaignRepo.NewPjRepository(c.Database),
 	}
 }
 
@@ -203,6 +207,9 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Services.Identification,
 				c.Services.EventPublisher,
 			),
+			UpdatePjStats: updatepjstats.New(
+				c.Repositories.PJ,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -226,12 +233,14 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.Services.JWT,
 			c.Repositories.User,
 			c.Repositories.Campaign,
+			c.Repositories.PJ,
 		),
 		Campaign: handler.NewCampaignHandler(
 			c.UseCases.Campaign.CreateCampaign,
 			c.UseCases.Campaign.InviteUser,
 			c.UseCases.Campaign.CreatePJ,
 			c.UseCases.Session.CreateSession,
+			c.UseCases.Campaign.UpdatePjStats,
 		),
 	}
 }
