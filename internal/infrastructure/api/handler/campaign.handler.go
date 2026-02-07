@@ -16,6 +16,7 @@ type CampaignHandler struct {
 	createSessionUseCase  session.CreateSessionUseCase
 	updatePJStatsUseCase  campaign.UpdateStatsUseCase
 	getCampaignUseCase    campaign.GetCampaignUseCase
+	getPjUseCase          campaign.GetPjUseCase
 }
 
 func NewCampaignHandler(
@@ -25,6 +26,7 @@ func NewCampaignHandler(
 	createSessionUseCase session.CreateSessionUseCase,
 	updatePJStatsUseCase campaign.UpdateStatsUseCase,
 	getcampaignUseCase campaign.GetCampaignUseCase,
+	getPjUseCase campaign.GetPjUseCase,
 ) *CampaignHandler {
 	return &CampaignHandler{
 		createCampaignUseCase: createCampaignUseCase,
@@ -33,6 +35,7 @@ func NewCampaignHandler(
 		createSessionUseCase:  createSessionUseCase,
 		updatePJStatsUseCase:  updatePJStatsUseCase,
 		getCampaignUseCase:    getcampaignUseCase,
+		getPjUseCase:          getPjUseCase,
 	}
 }
 
@@ -245,4 +248,21 @@ func (h *CampaignHandler) GetCampaign(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.MapCampaignOutputBody(output))
+}
+
+func (h *CampaignHandler) GetPj(c *gin.Context) {
+	var pathParams dto.PJPathParams
+
+	if err := c.ShouldBindUri(&pathParams); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	output, err := h.getPjUseCase.Execute(c.Request.Context(), pathParams.PJID)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MapPJOutputBody(output))
 }
