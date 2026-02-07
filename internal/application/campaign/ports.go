@@ -23,3 +23,7 @@ type ConsumeXpUseCase interface {
 type UpdateStatsUseCase interface {
 	Execute(ctx context.Context, input UpdatePjStatsInput) (PJOutput, error)
 }
+
+type GetCampaignUseCase interface {
+	Execute(ctx context.Context, campID string) (CampaignOutput, error)
+}
