@@ -369,3 +369,17 @@ func MapToUpdatePjStatsParameters(input UpdatePjStatsInput) campaign.PjUpdatePar
 
 	return params
 }
+
+type CampaignBasicInfoOutput struct {
+	ID       string
+	Name     string
+	MasterID string
+}
+
+func MapCampaignBasicInfoOutput(c campaign.CampaignBasicInfo) CampaignBasicInfoOutput {
+	return CampaignBasicInfoOutput{
+		ID:       c.ID(),
+		Name:     c.Name(),
+		MasterID: c.MasterID(),
+	}
+}

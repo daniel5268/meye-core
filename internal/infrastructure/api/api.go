@@ -99,6 +99,10 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequireCampaignMaster(),
 			r.handlers.CampaignHandler.GetCampaign,
 		)
+		campaigns.GET("",
+			r.handlers.AuthHandler.RequireMasterRole(),
+			r.handlers.CampaignHandler.GetCampaignsBasicInfo,
+		)
 	}
 }
 

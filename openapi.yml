@@ -174,6 +174,52 @@ paths:
                     code: USERNAME_EXISTS
 
   /api/v1/campaigns:
+    get:
+      tags:
+        - Campaigns
+      summary: List user's campaigns
+      description: |
+        Retrieve all campaigns created by the authenticated user (where they are the master).
+        Only users with the **Master** role can access this endpoint.
+
+        Returns a simple array of campaign summaries with basic information:
+        - Campaign ID
+        - Master ID (will always be the authenticated user's ID)
+        - Campaign name
+
+        **Note:** This endpoint does not return invitations or player characters.
+        Use `GET /api/v1/campaigns/{campaignID}` to get full campaign details.
+      operationId: listUserCampaigns
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Campaigns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignSummary'
+              examples:
+                success:
+                  value:
+                    - id: "659a49bc-b6c1-4ab4-a763-33d382014174"
+                      master_id: "9a984b20-200d-485a-9d3d-83ab9e9e85a6"
+                      name: "exoneras fuera"
+                    - id: "750e8400-e29b-41d4-a716-446655440001"
+                      master_id: "9a984b20-200d-485a-9d3d-83ab9e9e85a6"
+                      name: "Dragon's Quest"
+                emptyList:
+                  value: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Insufficient permissions (requires Master role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       tags:
         - Campaigns
@@ -716,6 +762,24 @@ components:
           format: uuid
           description: User ID of the campaign master
           example: 123e4567-e89b-12d3-a456-426614174000
+
+    CampaignSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique campaign identifier
+          example: 659a49bc-b6c1-4ab4-a763-33d382014174
+        master_id:
+          type: string
+          format: uuid
+          description: User ID of the campaign master
+          example: 9a984b20-200d-485a-9d3d-83ab9e9e85a6
+        name:
+          type: string
+          description: Campaign name
+          example: exoneras fuera
 
     CampaignDetails:
       type: object
