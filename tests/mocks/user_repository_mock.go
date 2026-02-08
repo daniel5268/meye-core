@@ -56,6 +56,21 @@ func (mr *MockUserRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockUserRepository)(nil).FindByID), ctx, id)
 }
 
+// FindByRole mocks base method.
+func (m *MockUserRepository) FindByRole(ctx context.Context, role user.UserRole, page, size int) ([]*user.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByRole", ctx, role, page, size)
+	ret0, _ := ret[0].([]*user.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByRole indicates an expected call of FindByRole.
+func (mr *MockUserRepositoryMockRecorder) FindByRole(ctx, role, page, size any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByRole", reflect.TypeOf((*MockUserRepository)(nil).FindByRole), ctx, role, page, size)
+}
+
 // FindByUsername mocks base method.
 func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*user.User, error) {
 	m.ctrl.T.Helper()

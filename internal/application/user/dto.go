@@ -26,3 +26,8 @@ func MapUserOutput(u *user.User) UserOutput {
 		Role:     u.Role(),
 	}
 }
+
+type PaginationInput struct {
+	Page int
+	Size int
+}

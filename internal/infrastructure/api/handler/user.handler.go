@@ -11,12 +11,18 @@ import (
 type UserHandler struct {
 	createUserUseCase user.CreateUserUseCase
 	loginUseCase      user.LoginUseCase
+	getPlayersUseCase user.GetPlayersUseCase
 }
 
-func NewUserHandler(createUserUC user.CreateUserUseCase, loginUseCase user.LoginUseCase) *UserHandler {
+func NewUserHandler(
+	createUserUC user.CreateUserUseCase,
+	loginUseCase user.LoginUseCase,
+	getPlayersUseCase user.GetPlayersUseCase,
+) *UserHandler {
 	return &UserHandler{
 		createUserUseCase: createUserUC,
 		loginUseCase:      loginUseCase,
+		getPlayersUseCase: getPlayersUseCase,
 	}
 }
 
@@ -65,4 +71,35 @@ func (h *UserHandler) Login(c *gin.Context) {
 	output := dto.MapLoginOutput(token)
 
 	c.JSON(http.StatusOK, output)
+}
+
+func (h *UserHandler) GetPlayers(c *gin.Context) {
+	var queryParams dto.Pagination
+
+	if err := c.ShouldBindQuery(&queryParams); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	input := user.PaginationInput{
+		Page: queryParams.Page(),
+		Size: queryParams.Size(),
+	}
+
+	output, err := h.getPlayersUseCase.Execute(c.Request.Context(), input)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	data := make([]dto.UserOutputBody, 0, len(output))
+	for _, u := range output {
+		data = append(data, dto.MapUserOutput(u))
+	}
+
+	c.JSON(http.StatusOK, dto.PaginationOutputBody{
+		Page: queryParams.Page(),
+		Size: queryParams.Size(),
+		Data: data,
+	})
 }

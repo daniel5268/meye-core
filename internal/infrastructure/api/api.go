@@ -67,6 +67,11 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 			r.handlers.UserHandler.CreateUser,
 		)
 		users.POST("/login", r.handlers.UserHandler.Login)
+		users.GET("/players",
+			r.handlers.AuthHandler.AuthMiddleware(),
+			r.handlers.AuthHandler.RequireMasterRole(),
+			r.handlers.UserHandler.GetPlayers,
+		)
 	}
 }
 
