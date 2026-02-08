@@ -125,6 +125,7 @@ The API is fully documented using OpenAPI v3.0.3 specification. This file contai
 #### Campaign Management
 - `POST /api/v1/campaigns` - Create campaign (Master role)
 - `GET /api/v1/campaigns/{campaignID}` - Get campaign details (Master only)
+- `GET /api/v1/campaigns` - Get campaigns basic information details (Master only)
 - `POST /api/v1/campaigns/{campaignID}/invitations` - Invite user (Master only)
 - `POST /api/v1/campaigns/{campaignID}/pjs` - Create player character (Player role)
 - `POST /api/v1/campaigns/{campaignID}/sessions` - Create session (Master only)

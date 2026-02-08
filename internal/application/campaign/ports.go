@@ -31,3 +31,7 @@ type GetCampaignUseCase interface {
 type GetPjUseCase interface {
 	Execute(ctx context.Context, pjID string) (PJOutput, error)
 }
+
+type GetCampaignsUseCase interface {
+	Execute(ctx context.Context, masterID string) ([]CampaignBasicInfoOutput, error)
+}

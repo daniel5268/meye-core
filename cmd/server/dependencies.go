@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"meye-core/internal/application/campaign"
 	"meye-core/internal/application/campaign/createcampaign"
 	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/getcampaign"
+	"meye-core/internal/application/campaign/getcampaigns"
 	"meye-core/internal/application/campaign/getpj"
 	"meye-core/internal/application/campaign/inviteuser"
 	"meye-core/internal/application/campaign/updatepjstats"
-	"meye-core/internal/application/session"
 	"meye-core/internal/application/session/createsession"
-	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/application/user/getplayers"
 	"meye-core/internal/application/user/login"
@@ -35,22 +33,23 @@ import (
 )
 
 type UserUseCases struct {
-	CreateUser user.CreateUserUseCase
-	Login      user.LoginUseCase
-	GetPlayers user.GetPlayersUseCase
+	CreateUser *createuser.UseCase
+	Login      *login.UseCase
+	GetPlayers *getplayers.UseCase
 }
 
 type CampaignUseCases struct {
-	CreateCampaign campaign.CreateCampaignUseCase
-	InviteUser     campaign.InviteUserUseCase
-	CreatePJ       campaign.CreatePJUseCase
-	UpdatePjStats  campaign.UpdateStatsUseCase
-	GetCampaign    campaign.GetCampaignUseCase
-	GetPj          campaign.GetPjUseCase
+	CreateCampaign *createcampaign.UseCase
+	InviteUser     *inviteuser.UseCase
+	CreatePJ       *createpj.UseCase
+	UpdatePjStats  *updatepjstats.UseCase
+	GetCampaign    *getcampaign.UseCase
+	GetPj          *getpj.UseCase
+	GetCampaigns   *getcampaigns.UseCase
 }
 
 type SessionUseCases struct {
-	CreateSession session.CreateSessionUseCase
+	CreateSession *createsession.UseCase
 }
 
 type UseCases struct {
@@ -60,10 +59,11 @@ type UseCases struct {
 }
 
 type Repositories struct {
-	User     *postgresUserRepo.Repository
-	Campaign *postgresCampaignRepo.Repository
-	Session  *postgresSessionRepo.Repository
-	PJ       *postgresCampaignRepo.PjRepository
+	User                 *postgresUserRepo.Repository
+	Campaign             *postgresCampaignRepo.Repository
+	Session              *postgresSessionRepo.Repository
+	PJ                   *postgresCampaignRepo.PjRepository
+	CampaignQueryService *postgresCampaignRepo.CampaignQueryService
 }
 
 type Services struct {
@@ -173,10 +173,11 @@ func (c *DependencyContainer) initializeServices() {
 
 func (c *DependencyContainer) initializeRepositories() {
 	c.Repositories = &Repositories{
-		User:     postgresUserRepo.New(c.Database),
-		Campaign: postgresCampaignRepo.New(c.Database),
-		Session:  postgresSessionRepo.New(c.Database),
-		PJ:       postgresCampaignRepo.NewPjRepository(c.Database),
+		User:                 postgresUserRepo.New(c.Database),
+		Campaign:             postgresCampaignRepo.New(c.Database),
+		Session:              postgresSessionRepo.New(c.Database),
+		PJ:                   postgresCampaignRepo.NewPjRepository(c.Database),
+		CampaignQueryService: postgresCampaignRepo.NewQueryService(c.Database),
 	}
 }
 
@@ -225,6 +226,9 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetPj: getpj.New(
 				c.Repositories.PJ,
 			),
+			GetCampaigns: getcampaigns.New(
+				c.Repositories.CampaignQueryService,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -259,6 +263,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.Campaign.UpdatePjStats,
 			c.UseCases.Campaign.GetCampaign,
 			c.UseCases.Campaign.GetPj,
+			c.UseCases.Campaign.GetCampaigns,
 		),
 	}
 }
