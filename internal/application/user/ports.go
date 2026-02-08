@@ -17,3 +17,7 @@ type CreateUserUseCase interface {
 type LoginUseCase interface {
 	Execute(ctx context.Context, input LoginInput) (string, error)
 }
+
+type GetPlayersUseCase interface {
+	Execute(ctx context.Context, input PaginationInput) ([]UserOutput, error)
+}

@@ -15,6 +15,7 @@ import (
 	"meye-core/internal/application/session/createsession"
 	"meye-core/internal/application/user"
 	"meye-core/internal/application/user/createuser"
+	"meye-core/internal/application/user/getplayers"
 	"meye-core/internal/application/user/login"
 	"meye-core/internal/config"
 	"meye-core/internal/infrastructure/api"
@@ -36,6 +37,7 @@ import (
 type UserUseCases struct {
 	CreateUser user.CreateUserUseCase
 	Login      user.LoginUseCase
+	GetPlayers user.GetPlayersUseCase
 }
 
 type CampaignUseCases struct {
@@ -192,6 +194,9 @@ func (c *DependencyContainer) initializeUseCases() {
 				c.Services.Hash,
 				c.Services.JWT,
 			),
+			GetPlayers: getplayers.New(
+				c.Repositories.User,
+			),
 		},
 		Campaign: &CampaignUseCases{
 			CreateCampaign: createcampaign.New(
@@ -237,6 +242,7 @@ func (c *DependencyContainer) initializeHandlers() {
 		User: handler.NewUserHandler(
 			c.UseCases.User.CreateUser,
 			c.UseCases.User.Login,
+			c.UseCases.User.GetPlayers,
 		),
 		Auth: handler.NewAuthHandler(
 			c.Config.Api.ApiKey,

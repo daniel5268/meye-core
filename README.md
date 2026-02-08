@@ -72,7 +72,7 @@
    GO_ENV=development go run ./cmd/server/...
    ```
 
-7. **Run the worker** (optional, for event consumption)
+7. **Run the worker**
    ```bash
    GO_ENV=development go run ./cmd/worker/...
    ```
