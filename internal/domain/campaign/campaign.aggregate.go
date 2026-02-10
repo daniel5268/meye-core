@@ -2,6 +2,7 @@ package campaign
 
 import (
 	"meye-core/internal/domain/event"
+	"meye-core/internal/domain/session"
 	"meye-core/internal/domain/shared"
 )
 
@@ -11,6 +12,7 @@ type Campaign struct {
 	name              string
 	invitations       []*Invitation
 	pjs               []*PJ
+	sessions          []*session.Session
 	uncommittedEvents []event.DomainEvent
 }
 
@@ -123,15 +125,17 @@ func (c *Campaign) MasterID() string                       { return c.masterID }
 func (c *Campaign) Name() string                           { return c.name }
 func (c *Campaign) Invitations() []*Invitation             { return c.invitations }
 func (c *Campaign) PJs() []*PJ                             { return c.pjs }
+func (c *Campaign) Sessions() []*session.Session           { return c.sessions }
 func (c *Campaign) UncommittedEvents() []event.DomainEvent { return c.uncommittedEvents }
 
-func CreateCampaignWithoutValidation(id, masterID, name string, invitations []*Invitation, pjs []*PJ) *Campaign {
+func CreateCampaignWithoutValidation(id, masterID, name string, invitations []*Invitation, pjs []*PJ, sessions []*session.Session) *Campaign {
 	return &Campaign{
 		id:          id,
 		masterID:    masterID,
 		name:        name,
 		invitations: invitations,
 		pjs:         pjs,
+		sessions:    sessions,
 	}
 }
 

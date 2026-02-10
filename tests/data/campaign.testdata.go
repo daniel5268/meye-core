@@ -2,6 +2,7 @@ package data
 
 import (
 	"meye-core/internal/domain/campaign"
+	"meye-core/internal/domain/session"
 	"meye-core/tests/mocks"
 	"testing"
 
@@ -28,6 +29,7 @@ func Campaign(t *testing.T) *campaign.Campaign {
 		CampaignName,
 		[]*campaign.Invitation{},
 		[]*campaign.PJ{},
+		[]*session.Session{},
 	)
 
 	_, _ = c.InviteUser(UserID, idServ)

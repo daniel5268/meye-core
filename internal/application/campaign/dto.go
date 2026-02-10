@@ -1,6 +1,9 @@
 package campaign
 
-import "meye-core/internal/domain/campaign"
+import (
+	"meye-core/internal/application/session"
+	"meye-core/internal/domain/campaign"
+)
 
 type CreateCampaignInput struct {
 	Name     string
@@ -18,12 +21,18 @@ func MapCampaignOutput(c *campaign.Campaign) CampaignOutput {
 		pjs[i] = MapPJOutput(pj)
 	}
 
+	sessions := make([]session.SessionOutput, len(c.Sessions()))
+	for i, s := range c.Sessions() {
+		sessions[i] = session.MapSessionOutput(s)
+	}
+
 	return CampaignOutput{
 		ID:          c.ID(),
 		Name:        c.Name(),
 		MasterID:    c.MasterID(),
 		Invitations: invitations,
 		PJs:         pjs,
+		Sessions:    sessions,
 	}
 }
 
@@ -33,6 +42,7 @@ type CampaignOutput struct {
 	MasterID    string
 	Invitations []InvitationOutput
 	PJs         []PJOutput
+	Sessions    []session.SessionOutput
 }
 
 type InviteUserInput struct {
