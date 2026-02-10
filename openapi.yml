@@ -173,6 +173,81 @@ paths:
                     error: Username already exists
                     code: USERNAME_EXISTS
 
+  /api/v1/users/players:
+    get:
+      tags:
+        - Users
+      summary: List all players
+      description: |
+        Retrieve a paginated list of all users with the **Player** role.
+
+        **Pagination:**
+        - Default page: 1
+        - Default size: 10
+        - Maximum size: 100
+        - Returns metadata (page, size) along with player data
+
+        **Use Cases:**
+        - Campaign masters looking for players to invite
+        - Admins managing player accounts
+        - Browsing available players in the system
+
+        **Authorization:** Requires authentication (any authenticated user can access)
+      operationId: listPlayers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: size
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 20
+      responses:
+        '200':
+          description: Players retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsersResponse'
+              examples:
+                withPlayers:
+                  value:
+                    page: 1
+                    size: 20
+                    data:
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        username: "player1"
+                        role: "player"
+                      - id: "234e5678-e89b-12d3-a456-426614174001"
+                        username: "player2"
+                        role: "player"
+                      - id: "345e6789-e89b-12d3-a456-426614174002"
+                        username: "heroicwarrior"
+                        role: "player"
+                emptyPage:
+                  value:
+                    page: 5
+                    size: 20
+                    data: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/v1/campaigns:
     get:
       tags:
@@ -733,6 +808,23 @@ components:
         - **player**: Regular player, can create and manage characters
       example: master
 
+    PaginatedUsersResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number (1-indexed)
+          example: 1
+        size:
+          type: integer
+          description: Number of items per page
+          example: 20
+        data:
+          type: array
+          description: Array of player users
+          items:
+            $ref: '#/components/schemas/User'
+
     # Campaign Schemas
     CreateCampaignRequest:
       type: object
@@ -808,6 +900,11 @@ components:
           description: All player characters in the campaign
           items:
             $ref: '#/components/schemas/PJ'
+        sessions:
+          type: array
+          description: All sessions in the campaign
+          items:
+            $ref: '#/components/schemas/Session'
 
     InviteUserRequest:
       type: object

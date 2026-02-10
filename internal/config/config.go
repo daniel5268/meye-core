@@ -3,12 +3,14 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
 type Api struct {
-	Port   string
-	ApiKey string
+	Port           string
+	ApiKey         string
+	AllowedOrigins []string
 }
 
 type Database struct {
@@ -47,6 +49,13 @@ func (cfg *Config) loadApi() error {
 	if cfg.Api.ApiKey == "" {
 		return getInvalidVarErr("API_KEY")
 	}
+
+	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+	if allowedOrigins == "" {
+		return getInvalidVarErr("ALLOWED_ORIGINS")
+	}
+
+	cfg.Api.AllowedOrigins = strings.Split(allowedOrigins, ",")
 
 	return nil
 }

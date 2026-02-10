@@ -273,7 +273,7 @@ func (c *DependencyContainer) initializeRouter() {
 		UserHandler:     c.Handlers.User,
 		AuthHandler:     c.Handlers.Auth,
 		CampaignHandler: c.Handlers.Campaign,
-	})
+	}, c.Config.Api.AllowedOrigins)
 	logrus.Debug("Router initialized")
 }
 

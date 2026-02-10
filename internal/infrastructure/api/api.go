@@ -3,7 +3,10 @@ package api
 import (
 	"meye-core/internal/infrastructure/api/handler"
 	customValidator "meye-core/internal/infrastructure/api/validator"
+	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -28,9 +31,17 @@ func init() {
 	}
 }
 
-func NewRouter(handlers *Handlers) *Router {
+func NewRouter(handlers *Handlers, allowedOrigins []string) *Router {
 	engine := gin.Default()
 	engine.Use(gin.Recovery())
+	engine.Use(cors.New(cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-API-Key"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	router := &Router{
 		engine:   engine,

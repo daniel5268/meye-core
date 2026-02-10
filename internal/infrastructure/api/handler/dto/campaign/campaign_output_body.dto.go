@@ -8,6 +8,7 @@ type CampaignOutputBody struct {
 	MasterID    string                 `json:"master_id"`
 	Invitations []InvitationOutputBody `json:"invitations"`
 	PJs         []PJOutputBody         `json:"pjs"`
+	Sessions    []SessionOutput        `json:"sessions"`
 }
 
 func MapCampaignOutputBody(c campaign.CampaignOutput) CampaignOutputBody {
@@ -21,11 +22,17 @@ func MapCampaignOutputBody(c campaign.CampaignOutput) CampaignOutputBody {
 		pjs[i] = MapPJOutputBody(pj)
 	}
 
+	sessions := make([]SessionOutput, len(c.Sessions))
+	for i, s := range c.Sessions {
+		sessions[i] = MapSessionOutput(s)
+	}
+
 	return CampaignOutputBody{
 		ID:          c.ID,
 		Name:        c.Name,
 		MasterID:    c.MasterID,
 		Invitations: invitations,
 		PJs:         pjs,
+		Sessions:    sessions,
 	}
 }
