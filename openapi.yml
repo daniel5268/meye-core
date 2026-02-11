@@ -173,6 +173,25 @@ paths:
                     error: Username already exists
                     code: USERNAME_EXISTS
 
+  /api/v1/users/self:
+    get:
+      tags:
+        - Users
+      summary: Gets user details
+      description: |
+        Gets the details of the logged user.
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Details of the logged user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/v1/users/players:
     get:
       tags:
@@ -267,6 +286,8 @@ paths:
       operationId: listUserCampaigns
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignID'
       responses:
         '200':
           description: Campaigns retrieved successfully

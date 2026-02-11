@@ -12,17 +12,20 @@ type UserHandler struct {
 	createUserUseCase user.CreateUserUseCase
 	loginUseCase      user.LoginUseCase
 	getPlayersUseCase user.GetPlayersUseCase
+	getUserUseCase    user.GetUserUseCase
 }
 
 func NewUserHandler(
 	createUserUC user.CreateUserUseCase,
 	loginUseCase user.LoginUseCase,
 	getPlayersUseCase user.GetPlayersUseCase,
+	getUserUseCase user.GetUserUseCase,
 ) *UserHandler {
 	return &UserHandler{
 		createUserUseCase: createUserUC,
 		loginUseCase:      loginUseCase,
 		getPlayersUseCase: getPlayersUseCase,
+		getUserUseCase:    getUserUseCase,
 	}
 }
 
@@ -102,4 +105,26 @@ func (h *UserHandler) GetPlayers(c *gin.Context) {
 		Size: queryParams.Size(),
 		Data: data,
 	})
+}
+
+func (h *UserHandler) GetUser(c *gin.Context) {
+	authValue, exists := c.Get(AuthKey)
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	auth, ok := authValue.(AuthContext)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	output, err := h.getUserUseCase.Execute(c.Request.Context(), auth.UserID)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MapUserOutput(output))
 }
