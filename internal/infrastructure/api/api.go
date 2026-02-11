@@ -83,6 +83,10 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequireMasterRole(),
 			r.handlers.UserHandler.GetPlayers,
 		)
+		users.GET("/self",
+			r.handlers.AuthHandler.AuthMiddleware(),
+			r.handlers.UserHandler.GetUser,
+		)
 	}
 }
 
