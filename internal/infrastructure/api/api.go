@@ -83,6 +83,10 @@ func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
 			r.handlers.AuthHandler.RequireMasterRole(),
 			r.handlers.UserHandler.GetPlayers,
 		)
+		users.GET("/self",
+			r.handlers.AuthHandler.AuthMiddleware(),
+			r.handlers.UserHandler.GetUser,
+		)
 	}
 }
 
@@ -120,10 +124,16 @@ func (r *Router) setupCampaignRoutes(group *gin.RouterGroup) {
 func (r *Router) setupPjRoutes(group *gin.RouterGroup) {
 	pjs := group.Group("/pjs")
 	pjs.Use(r.handlers.AuthHandler.AuthMiddleware())
-	pjs.Use(r.handlers.AuthHandler.RequirePjUser())
 	{
-		pjs.PUT("/:pjID/stats", r.handlers.CampaignHandler.UpdatePJStats)
-		pjs.GET("/:pjID", r.handlers.CampaignHandler.GetPj)
+		pjs.PUT("/:pjID/stats",
+			r.handlers.AuthHandler.RequirePjUser(),
+			r.handlers.CampaignHandler.UpdatePJStats,
+		)
+		pjs.GET("/:pjID",
+			r.handlers.CampaignHandler.GetPj,
+			r.handlers.AuthHandler.RequirePjUser(),
+		)
+		pjs.GET("", r.handlers.CampaignHandler.GetPjs)
 	}
 }
 

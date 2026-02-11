@@ -18,6 +18,7 @@ type CampaignHandler struct {
 	getCampaignUseCase    campaign.GetCampaignUseCase
 	getPjUseCase          campaign.GetPjUseCase
 	getCampaignsUseCase   campaign.GetCampaignsUseCase
+	getPjsUseCase         campaign.GetPjsUseCase
 }
 
 func NewCampaignHandler(
@@ -29,6 +30,7 @@ func NewCampaignHandler(
 	getcampaignUseCase campaign.GetCampaignUseCase,
 	getPjUseCase campaign.GetPjUseCase,
 	getCampaignsUseCase campaign.GetCampaignsUseCase,
+	getPjsUseCase campaign.GetPjsUseCase,
 ) *CampaignHandler {
 	return &CampaignHandler{
 		createCampaignUseCase: createCampaignUseCase,
@@ -39,6 +41,7 @@ func NewCampaignHandler(
 		getCampaignUseCase:    getcampaignUseCase,
 		getPjUseCase:          getPjUseCase,
 		getCampaignsUseCase:   getCampaignsUseCase,
+		getPjsUseCase:         getPjsUseCase,
 	}
 }
 
@@ -292,6 +295,33 @@ func (h *CampaignHandler) GetCampaignsBasicInfo(c *gin.Context) {
 	outputBody := make([]dto.CampaignBasicInfoOutputBody, 0, len(output))
 	for _, o := range output {
 		outputBody = append(outputBody, dto.MapCampaignBasicInfoOutputBody(o))
+	}
+
+	c.JSON(http.StatusOK, outputBody)
+}
+
+func (h *CampaignHandler) GetPjs(c *gin.Context) {
+	authValue, exists := c.Get(AuthKey)
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	auth, ok := authValue.(AuthContext)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	output, err := h.getPjsUseCase.Execute(c.Request.Context(), auth.UserID)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	outputBody := make([]dto.PjBasicInfoOutputBody, 0, len(output))
+	for _, o := range output {
+		outputBody = append(outputBody, dto.MapPjBasicInfoOutputBody(o))
 	}
 
 	c.JSON(http.StatusOK, outputBody)

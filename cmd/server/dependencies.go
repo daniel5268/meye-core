@@ -9,11 +9,13 @@ import (
 	"meye-core/internal/application/campaign/getcampaign"
 	"meye-core/internal/application/campaign/getcampaigns"
 	"meye-core/internal/application/campaign/getpj"
+	"meye-core/internal/application/campaign/getpjs"
 	"meye-core/internal/application/campaign/inviteuser"
 	"meye-core/internal/application/campaign/updatepjstats"
 	"meye-core/internal/application/session/createsession"
 	"meye-core/internal/application/user/createuser"
 	"meye-core/internal/application/user/getplayers"
+	"meye-core/internal/application/user/getuser"
 	"meye-core/internal/application/user/login"
 	"meye-core/internal/config"
 	"meye-core/internal/infrastructure/api"
@@ -36,6 +38,7 @@ type UserUseCases struct {
 	CreateUser *createuser.UseCase
 	Login      *login.UseCase
 	GetPlayers *getplayers.UseCase
+	GetUser    *getuser.UseCase
 }
 
 type CampaignUseCases struct {
@@ -46,6 +49,7 @@ type CampaignUseCases struct {
 	GetCampaign    *getcampaign.UseCase
 	GetPj          *getpj.UseCase
 	GetCampaigns   *getcampaigns.UseCase
+	GetPjs         *getpjs.UseCase
 }
 
 type SessionUseCases struct {
@@ -64,6 +68,7 @@ type Repositories struct {
 	Session              *postgresSessionRepo.Repository
 	PJ                   *postgresCampaignRepo.PjRepository
 	CampaignQueryService *postgresCampaignRepo.CampaignQueryService
+	PjQueryService       *postgresCampaignRepo.PjQueryService
 }
 
 type Services struct {
@@ -178,6 +183,7 @@ func (c *DependencyContainer) initializeRepositories() {
 		Session:              postgresSessionRepo.New(c.Database),
 		PJ:                   postgresCampaignRepo.NewPjRepository(c.Database),
 		CampaignQueryService: postgresCampaignRepo.NewQueryService(c.Database),
+		PjQueryService:       postgresCampaignRepo.NewPjQueryService(c.Database),
 	}
 }
 
@@ -198,6 +204,7 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetPlayers: getplayers.New(
 				c.Repositories.User,
 			),
+			GetUser: getuser.New(c.Repositories.User),
 		},
 		Campaign: &CampaignUseCases{
 			CreateCampaign: createcampaign.New(
@@ -229,6 +236,9 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetCampaigns: getcampaigns.New(
 				c.Repositories.CampaignQueryService,
 			),
+			GetPjs: getpjs.New(
+				c.Repositories.PjQueryService,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -247,6 +257,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.User.CreateUser,
 			c.UseCases.User.Login,
 			c.UseCases.User.GetPlayers,
+			c.UseCases.User.GetUser,
 		),
 		Auth: handler.NewAuthHandler(
 			c.Config.Api.ApiKey,
@@ -264,6 +275,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.Campaign.GetCampaign,
 			c.UseCases.Campaign.GetPj,
 			c.UseCases.Campaign.GetCampaigns,
+			c.UseCases.Campaign.GetPjs,
 		),
 	}
 }

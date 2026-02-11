@@ -386,10 +386,22 @@ type CampaignBasicInfoOutput struct {
 	MasterID string
 }
 
-func MapCampaignBasicInfoOutput(c campaign.CampaignBasicInfo) CampaignBasicInfoOutput {
+func MapCampaignBasicInfoOutput(c *campaign.CampaignBasicInfo) CampaignBasicInfoOutput {
 	return CampaignBasicInfoOutput{
 		ID:       c.ID(),
 		Name:     c.Name(),
 		MasterID: c.MasterID(),
+	}
+}
+
+type PjBasicInfoOutput struct {
+	ID   string
+	Name string
+}
+
+func MapPjBasicInfo(pj *campaign.PjBasicInfo) PjBasicInfoOutput {
+	return PjBasicInfoOutput{
+		ID:   pj.ID(),
+		Name: pj.Name(),
 	}
 }
