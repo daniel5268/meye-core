@@ -35,3 +35,7 @@ type GetPjUseCase interface {
 type GetCampaignsUseCase interface {
 	Execute(ctx context.Context, masterID string) ([]CampaignBasicInfoOutput, error)
 }
+
+type GetPjsUseCase interface {
+	Execute(ctx context.Context, userID string) ([]PjBasicInfoOutput, error)
+}

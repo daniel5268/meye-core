@@ -19,7 +19,7 @@ func NewQueryService(db *gorm.DB) *CampaignQueryService {
 	}
 }
 
-func (qd *CampaignQueryService) GetCampaignsBasicInfo(ctx context.Context, masterID string) ([]domaincampaign.CampaignBasicInfo, error) {
+func (qd *CampaignQueryService) GetCampaignsBasicInfo(ctx context.Context, masterID string) ([]*domaincampaign.CampaignBasicInfo, error) {
 	var campaigns []Campaign
 
 	err := qd.db.WithContext(ctx).
@@ -32,7 +32,7 @@ func (qd *CampaignQueryService) GetCampaignsBasicInfo(ctx context.Context, maste
 		return nil, err
 	}
 
-	result := make([]domaincampaign.CampaignBasicInfo, len(campaigns))
+	result := make([]*domaincampaign.CampaignBasicInfo, len(campaigns))
 	for i, c := range campaigns {
 		result[i] = domaincampaign.CreateCampaignBasicInfo(c.ID, c.Name, c.MasterID)
 	}

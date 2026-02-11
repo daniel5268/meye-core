@@ -9,6 +9,7 @@ import (
 	"meye-core/internal/application/campaign/getcampaign"
 	"meye-core/internal/application/campaign/getcampaigns"
 	"meye-core/internal/application/campaign/getpj"
+	"meye-core/internal/application/campaign/getpjs"
 	"meye-core/internal/application/campaign/inviteuser"
 	"meye-core/internal/application/campaign/updatepjstats"
 	"meye-core/internal/application/session/createsession"
@@ -48,6 +49,7 @@ type CampaignUseCases struct {
 	GetCampaign    *getcampaign.UseCase
 	GetPj          *getpj.UseCase
 	GetCampaigns   *getcampaigns.UseCase
+	GetPjs         *getpjs.UseCase
 }
 
 type SessionUseCases struct {
@@ -66,6 +68,7 @@ type Repositories struct {
 	Session              *postgresSessionRepo.Repository
 	PJ                   *postgresCampaignRepo.PjRepository
 	CampaignQueryService *postgresCampaignRepo.CampaignQueryService
+	PjQueryService       *postgresCampaignRepo.PjQueryService
 }
 
 type Services struct {
@@ -180,6 +183,7 @@ func (c *DependencyContainer) initializeRepositories() {
 		Session:              postgresSessionRepo.New(c.Database),
 		PJ:                   postgresCampaignRepo.NewPjRepository(c.Database),
 		CampaignQueryService: postgresCampaignRepo.NewQueryService(c.Database),
+		PjQueryService:       postgresCampaignRepo.NewPjQueryService(c.Database),
 	}
 }
 
@@ -232,6 +236,9 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetCampaigns: getcampaigns.New(
 				c.Repositories.CampaignQueryService,
 			),
+			GetPjs: getpjs.New(
+				c.Repositories.PjQueryService,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -268,6 +275,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.Campaign.GetCampaign,
 			c.UseCases.Campaign.GetPj,
 			c.UseCases.Campaign.GetCampaigns,
+			c.UseCases.Campaign.GetPjs,
 		),
 	}
 }
