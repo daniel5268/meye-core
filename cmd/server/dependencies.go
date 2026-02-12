@@ -8,6 +8,7 @@ import (
 	"meye-core/internal/application/campaign/createpj"
 	"meye-core/internal/application/campaign/getcampaign"
 	"meye-core/internal/application/campaign/getcampaigns"
+	"meye-core/internal/application/campaign/getinvitations"
 	"meye-core/internal/application/campaign/getpj"
 	"meye-core/internal/application/campaign/getpjs"
 	"meye-core/internal/application/campaign/inviteuser"
@@ -42,14 +43,15 @@ type UserUseCases struct {
 }
 
 type CampaignUseCases struct {
-	CreateCampaign *createcampaign.UseCase
-	InviteUser     *inviteuser.UseCase
-	CreatePJ       *createpj.UseCase
-	UpdatePjStats  *updatepjstats.UseCase
-	GetCampaign    *getcampaign.UseCase
-	GetPj          *getpj.UseCase
-	GetCampaigns   *getcampaigns.UseCase
-	GetPjs         *getpjs.UseCase
+	CreateCampaign        *createcampaign.UseCase
+	InviteUser            *inviteuser.UseCase
+	CreatePJ              *createpj.UseCase
+	UpdatePjStats         *updatepjstats.UseCase
+	GetCampaign           *getcampaign.UseCase
+	GetPj                 *getpj.UseCase
+	GetCampaigns          *getcampaigns.UseCase
+	GetPjs                *getpjs.UseCase
+	GetInvitationsUseCase *getinvitations.UseCase
 }
 
 type SessionUseCases struct {
@@ -69,6 +71,7 @@ type Repositories struct {
 	PJ                   *postgresCampaignRepo.PjRepository
 	CampaignQueryService *postgresCampaignRepo.CampaignQueryService
 	PjQueryService       *postgresCampaignRepo.PjQueryService
+	InvitationRepository *postgresCampaignRepo.InvitationRepository
 }
 
 type Services struct {
@@ -184,6 +187,7 @@ func (c *DependencyContainer) initializeRepositories() {
 		PJ:                   postgresCampaignRepo.NewPjRepository(c.Database),
 		CampaignQueryService: postgresCampaignRepo.NewQueryService(c.Database),
 		PjQueryService:       postgresCampaignRepo.NewPjQueryService(c.Database),
+		InvitationRepository: postgresCampaignRepo.NewInvitationRepository(c.Database),
 	}
 }
 
@@ -239,6 +243,9 @@ func (c *DependencyContainer) initializeUseCases() {
 			GetPjs: getpjs.New(
 				c.Repositories.PjQueryService,
 			),
+			GetInvitationsUseCase: getinvitations.New(
+				c.Repositories.InvitationRepository,
+			),
 		},
 		Session: &SessionUseCases{
 			CreateSession: createsession.New(
@@ -276,6 +283,7 @@ func (c *DependencyContainer) initializeHandlers() {
 			c.UseCases.Campaign.GetPj,
 			c.UseCases.Campaign.GetCampaigns,
 			c.UseCases.Campaign.GetPjs,
+			c.UseCases.Campaign.GetInvitationsUseCase,
 		),
 	}
 }

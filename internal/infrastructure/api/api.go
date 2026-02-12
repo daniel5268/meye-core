@@ -67,6 +67,7 @@ func (r *Router) setupRoutes() {
 	r.setupUserRoutes(v1)
 	r.setupCampaignRoutes(v1)
 	r.setupPjRoutes(v1)
+	r.setupInvitationRoutes(v1)
 }
 
 func (r *Router) setupUserRoutes(group *gin.RouterGroup) {
@@ -135,6 +136,17 @@ func (r *Router) setupPjRoutes(group *gin.RouterGroup) {
 		)
 		pjs.GET("", r.handlers.CampaignHandler.GetPjs)
 	}
+}
+
+func (r *Router) setupInvitationRoutes(group *gin.RouterGroup) {
+	invitations := group.Group("/invitations")
+	invitations.Use(r.handlers.AuthHandler.AuthMiddleware())
+	invitations.Use(r.handlers.AuthHandler.RequirePlayerRole())
+
+	{
+		invitations.GET("", r.handlers.CampaignHandler.GetUserInvitations)
+	}
+
 }
 
 // Engine returns the Gin engine

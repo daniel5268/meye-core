@@ -19,6 +19,7 @@ type CampaignHandler struct {
 	getPjUseCase          campaign.GetPjUseCase
 	getCampaignsUseCase   campaign.GetCampaignsUseCase
 	getPjsUseCase         campaign.GetPjsUseCase
+	getInvitations        campaign.GetInvitationsUseCase
 }
 
 func NewCampaignHandler(
@@ -31,6 +32,7 @@ func NewCampaignHandler(
 	getPjUseCase campaign.GetPjUseCase,
 	getCampaignsUseCase campaign.GetCampaignsUseCase,
 	getPjsUseCase campaign.GetPjsUseCase,
+	getInvitations campaign.GetInvitationsUseCase,
 ) *CampaignHandler {
 	return &CampaignHandler{
 		createCampaignUseCase: createCampaignUseCase,
@@ -42,6 +44,7 @@ func NewCampaignHandler(
 		getPjUseCase:          getPjUseCase,
 		getCampaignsUseCase:   getCampaignsUseCase,
 		getPjsUseCase:         getPjsUseCase,
+		getInvitations:        getInvitations,
 	}
 }
 
@@ -325,4 +328,31 @@ func (h *CampaignHandler) GetPjs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, outputBody)
+}
+
+func (h *CampaignHandler) GetUserInvitations(c *gin.Context) {
+	authValue, exists := c.Get(AuthKey)
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	auth, ok := authValue.(AuthContext)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, unauthorizedError)
+		return
+	}
+
+	result, err := h.getInvitations.Execute(c.Request.Context(), auth.UserID)
+	if err != nil {
+		respondMappedError(c, err)
+		return
+	}
+
+	output := make([]dto.InvitationOutputBody, 0, len(result))
+	for _, o := range result {
+		output = append(output, dto.MapInvitationOutputBody(o))
+	}
+
+	c.JSON(http.StatusOK, output)
 }
