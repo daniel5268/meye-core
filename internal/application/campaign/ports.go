@@ -39,3 +39,7 @@ type GetCampaignsUseCase interface {
 type GetPjsUseCase interface {
 	Execute(ctx context.Context, userID string) ([]PjBasicInfoOutput, error)
 }
+
+type GetInvitationsUseCase interface {
+	Execute(ctx context.Context, userID string) ([]InvitationOutput, error)
+}
