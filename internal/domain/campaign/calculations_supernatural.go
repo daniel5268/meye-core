@@ -4,7 +4,7 @@ const (
 	levelStepSupernatural = 100
 )
 
-func (sStats *SupernaturalStats) GetRequiredXP() int {
+func (sStats *SupernaturalStats) GetRequiredXP() uint {
 	var requiredXP uint
 
 	for i := range sStats.skills {
@@ -12,7 +12,7 @@ func (sStats *SupernaturalStats) GetRequiredXP() int {
 		requiredXP += getGroupRequiredXP(g, levelStepSupernatural, 1)
 	}
 
-	return int(requiredXP)
+	return requiredXP
 }
 
 func (skill Skill) getGroup() []uint {

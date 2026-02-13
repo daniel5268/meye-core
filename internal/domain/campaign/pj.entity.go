@@ -1,6 +1,8 @@
 package campaign
 
-import "meye-core/internal/domain/event"
+import (
+	"meye-core/internal/domain/event"
+)
 
 type PJType string
 
@@ -239,6 +241,7 @@ type PJ struct {
 	specialStats      SpecialStats
 	supernaturalStats *SupernaturalStats
 	xp                XP
+	spentXP           XP
 	uncommittedEvents []event.DomainEvent
 }
 
@@ -259,6 +262,7 @@ func (p *PJ) BasicStats() BasicStats                 { return p.basicStats }
 func (p *PJ) SpecialStats() SpecialStats             { return p.specialStats }
 func (p *PJ) SupernaturalStats() *SupernaturalStats  { return p.supernaturalStats }
 func (p *PJ) XP() XP                                 { return p.xp }
+func (p *PJ) SpentXP() XP                            { return p.spentXP }
 func (p *PJ) UncommittedEvents() []event.DomainEvent { return p.uncommittedEvents }
 
 // CreatePJWithoutValidation creates a PJ instance without validation.
@@ -282,7 +286,7 @@ func CreatePJWithoutValidation(
 	supernaturalStats *SupernaturalStats,
 	xp XP,
 ) *PJ {
-	return &PJ{
+	pj := &PJ{
 		id:                id,
 		campaignID:        campaignID,
 		userID:            userID,
@@ -300,6 +304,10 @@ func CreatePJWithoutValidation(
 		supernaturalStats: supernaturalStats,
 		xp:                xp,
 	}
+
+	pj.LoadRequiredXp()
+
+	return pj
 }
 
 func (pj *PJ) ConsumeXp(basic, special, supernatural uint) {
@@ -506,5 +514,16 @@ func (pj *PJ) UpdateStats(params PjUpdateParameters) error {
 
 	pj.uncommittedEvents = append(pj.uncommittedEvents, statsUpdatedEvent)
 
+	pj.LoadRequiredXp()
+
 	return nil
+}
+
+func (pj *PJ) LoadRequiredXp() {
+	pj.spentXP.basic = pj.basicStats.GetRequiredXP()
+	pj.spentXP.special = pj.specialStats.GetRequiredXP()
+
+	if pj.pjType == PJTypeSupernatural {
+		pj.spentXP.supernatural = pj.supernaturalStats.GetRequiredXP()
+	}
 }
