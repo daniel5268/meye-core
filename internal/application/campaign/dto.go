@@ -182,6 +182,7 @@ type PJOutput struct {
 	SpecialStats      SpecialStats
 	SupernaturalStats *SupernaturalStats
 	XP                XP
+	SpentXP           XP
 }
 
 func MapPJOutput(pj *campaign.PJ) PJOutput {
@@ -245,6 +246,11 @@ func MapPJOutput(pj *campaign.PJ) PJOutput {
 			Basic:        pj.XP().Basic(),
 			Special:      pj.XP().Special(),
 			Supernatural: pj.XP().Supernatural(),
+		},
+		SpentXP: XP{
+			Basic:        pj.SpentXP().Basic(),
+			Special:      pj.SpentXP().Special(),
+			Supernatural: pj.SpentXP().Supernatural(),
 		},
 	}
 

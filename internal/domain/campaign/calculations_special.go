@@ -6,7 +6,7 @@ const (
 	energyTalentedCost = energyDefaultCost / 2
 )
 
-func (ss *SpecialStats) GetRequiredXP() int {
+func (ss *SpecialStats) GetRequiredXP() uint {
 	physicalGroup := ss.physical.getGroup()
 	energyGroup := ss.energy.getGroup()
 	mentalGroup := ss.mental.getGroup()
@@ -19,7 +19,7 @@ func (ss *SpecialStats) GetRequiredXP() int {
 
 	energyTankXP := energyCost * ss.energyTank
 
-	return int(physicalXP + energyXP + mentalXP + energyTankXP)
+	return physicalXP + energyXP + mentalXP + energyTankXP
 }
 
 func (ps PhysicalSkills) getGroup() []uint {
