@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type ErrorResponse struct {
@@ -64,6 +65,7 @@ func respondMappedError(c *gin.Context, err error) {
 			Code:  domaincampaign.ErrCannotReduceStats.Error(),
 		})
 	default:
+		logrus.WithContext(c.Request.Context()).Error(err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: "Internal Server Error",
 			Code:  "INTERNAL_SERVER_ERROR",
